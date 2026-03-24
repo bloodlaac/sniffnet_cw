@@ -11,7 +11,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "uploaded_images")
@@ -41,11 +40,11 @@ public class UploadedImage {
     private String storagePath;
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime uploadedAt;
+    private Instant uploadedAt;
 
     @PrePersist
     public void prePersist() {
-        uploadedAt = LocalDateTime.now();
+        uploadedAt = Instant.now();
     }
 
     public Long getId() {

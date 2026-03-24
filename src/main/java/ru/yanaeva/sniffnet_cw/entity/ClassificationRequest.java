@@ -15,7 +15,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "classification_requests")
@@ -42,9 +41,9 @@ public class ClassificationRequest {
     private ClassificationStatus status = ClassificationStatus.CREATED;
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
-    private LocalDateTime completedAt;
+    private Instant completedAt;
 
     @Column(length = 100)
     private String predictedClass;
@@ -57,7 +56,7 @@ public class ClassificationRequest {
 
     @PrePersist
     public void prePersist() {
-        createdAt = LocalDateTime.now();
+        createdAt = Instant.now();
     }
 
     public Long getId() {

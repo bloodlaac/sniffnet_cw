@@ -114,8 +114,8 @@ public class GlobalExceptionHandler {
     ) {
         return build(
             HttpStatus.BAD_GATEWAY,
-            ex.getMessage(), 
-            equest,
+            ex.getMessage(),
+            request,
             null
         );
     }
