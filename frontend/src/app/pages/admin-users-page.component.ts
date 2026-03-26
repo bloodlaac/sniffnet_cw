@@ -115,12 +115,13 @@ import { formatApiError } from '../core/api.utils';
       text-align: left;
       padding: 1rem;
       border-radius: 1rem;
-      border: 1px solid rgba(16, 35, 31, 0.08);
-      background: rgba(16, 35, 31, 0.03);
+      border: 1px solid rgba(28, 71, 44, 0.12);
+      background: var(--color-surface-tint);
     }
 
     .user-row.active {
-      border-color: rgba(245, 127, 86, 0.45);
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(168, 210, 47, 0.18);
     }
 
     .user-row p {

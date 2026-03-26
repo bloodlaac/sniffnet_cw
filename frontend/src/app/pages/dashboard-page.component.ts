@@ -31,7 +31,7 @@ import { formatApiError } from '../core/api.utils';
         <strong>{{ experiments().length }}</strong>
         <span>Последние запуски обучения</span>
       </article>
-      <article class="card stat-card accent-card">
+      <article class="card stat-card">
         <p>Классификации</p>
         <strong>{{ history().length }}</strong>
         <span>Последние обращения к сервису</span>
@@ -177,10 +177,6 @@ import { formatApiError } from '../core/api.utils';
       color: var(--color-text-muted);
     }
 
-    .accent-card {
-      background: linear-gradient(145deg, rgba(240, 198, 110, 0.16), rgba(245, 127, 86, 0.18));
-    }
-
     .panel {
       padding: 1.3rem;
     }
@@ -215,7 +211,8 @@ import { formatApiError } from '../core/api.utils';
       gap: 1rem;
       padding: 0.95rem 1rem;
       border-radius: 1rem;
-      background: rgba(16, 35, 31, 0.04);
+      background: var(--color-surface-tint);
+      border: 1px solid rgba(28, 71, 44, 0.08);
     }
 
     .link-row {
@@ -226,18 +223,19 @@ import { formatApiError } from '../core/api.utils';
     .status-chip {
       padding: 0.3rem 0.7rem;
       border-radius: 999px;
-      background: rgba(16, 35, 31, 0.08);
+      background: var(--color-warning-bg);
+      color: var(--color-warning-text);
       font-size: 0.82rem;
     }
 
     .status-chip.success {
-      background: rgba(74, 161, 116, 0.16);
-      color: #2f7c53;
+      background: var(--color-success-bg);
+      color: var(--color-success-text);
     }
 
     .status-chip.warn {
-      background: rgba(240, 198, 110, 0.25);
-      color: #8b6320;
+      background: var(--color-warning-bg);
+      color: var(--color-warning-text);
     }
 
     @media (max-width: 1120px) {

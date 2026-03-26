@@ -1,6 +1,6 @@
 package ru.yanaeva.sniffnet_cw.dto.experiment;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import ru.yanaeva.sniffnet_cw.dto.config.TrainingConfigResponse;
 import ru.yanaeva.sniffnet_cw.dto.model.MetricResponse;
 import ru.yanaeva.sniffnet_cw.dto.model.ModelResponse;
@@ -8,8 +8,8 @@ import ru.yanaeva.sniffnet_cw.dto.model.ModelResponse;
 public record ExperimentResponse(
         Long id,
         String status,
-        Instant startTime,
-        Instant endTime,
+        LocalDateTime startTime,
+        LocalDateTime endTime,
         String reportPath,
         Long datasetId,
         String datasetName,

@@ -1,6 +1,5 @@
 package ru.yanaeva.sniffnet_cw.dto.user;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 public record UserResponse(

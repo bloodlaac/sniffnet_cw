@@ -10,7 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "uploaded_images")
@@ -40,11 +40,11 @@ public class UploadedImage {
     private String storagePath;
 
     @Column(nullable = false, updatable = false)
-    private Instant uploadedAt;
+    private LocalDateTime uploadedAt;
 
     @PrePersist
     public void prePersist() {
-        uploadedAt = Instant.now();
+        uploadedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -99,7 +99,7 @@ public class UploadedImage {
         this.storagePath = storagePath;
     }
 
-    public Instant getUploadedAt() {
+    public LocalDateTime getUploadedAt() {
         return uploadedAt;
     }
 }

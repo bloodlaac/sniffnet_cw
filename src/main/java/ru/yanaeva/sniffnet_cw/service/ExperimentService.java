@@ -1,6 +1,6 @@
 package ru.yanaeva.sniffnet_cw.service;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -128,7 +128,7 @@ public class ExperimentService {
         Experiment experiment = getEntity(id);
         experiment.setStatus(status);
         if (status == ExperimentStatus.COMPLETED || status == ExperimentStatus.FAILED) {
-            experiment.setEndTime(Instant.now());
+            experiment.setEndTime(LocalDateTime.now());
         }
         return toExperimentResponse(experimentRepository.save(experiment));
     }
@@ -156,7 +156,7 @@ public class ExperimentService {
 
     private ExperimentResponse finalizeExperiment(Experiment experiment, TrainingResult result) {
         experiment.setStatus(result.success() ? ExperimentStatus.COMPLETED : ExperimentStatus.FAILED);
-        experiment.setEndTime(Instant.now());
+        experiment.setEndTime(LocalDateTime.now());
         experiment.setReportPath(result.reportPath());
         experiment = experimentRepository.save(experiment);
 
@@ -172,11 +172,12 @@ public class ExperimentService {
         model.setParamsNum(result.paramsNum());
         model.setTrainingTimeSeconds(result.trainingTimeSeconds());
         model.setAvailableForInference(true);
-        model.setExternalReference(result.externalReference());
+        model.setWeightsPath(result.weightsPath());
         model = modelRepository.save(model);
 
         Metric metric = new Metric();
-        metric.setModel(model);
+        metric.setDataset(experiment.getDataset());
+        metric.setConfig(experiment.getConfig());
         metric.setTrainAccuracy(result.trainAccuracy());
         metric.setTrainLoss(result.trainLoss());
         metric.setValidationAccuracy(result.validationAccuracy());
@@ -190,8 +191,10 @@ public class ExperimentService {
     private ExperimentResponse toExperimentResponse(Experiment experiment) {
         ModelEntity model = modelRepository.findByExperimentId(experiment.getId())
         .orElse(null);
-        Metric metric = model == null ? null : metricRepository.findByModelId(model.getId())
-        .orElse(null);
+        Metric metric = metricRepository.findTopByDatasetIdAndConfigIdOrderByIdDesc(
+            experiment.getDataset().getId(),
+            experiment.getConfig().getId()
+        ).orElse(null);
         return mapperService.toExperimentResponse(experiment, model, metric);
     }
 

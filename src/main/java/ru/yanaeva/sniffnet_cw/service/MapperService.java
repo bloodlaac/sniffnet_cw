@@ -1,9 +1,10 @@
 package ru.yanaeva.sniffnet_cw.service;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import ru.yanaeva.sniffnet_cw.dto.auth.CurrentUserResponse;
 import ru.yanaeva.sniffnet_cw.dto.classification.ClassificationResponse;
 import ru.yanaeva.sniffnet_cw.dto.config.TrainingConfigResponse;
@@ -14,7 +15,6 @@ import ru.yanaeva.sniffnet_cw.dto.model.MetricResponse;
 import ru.yanaeva.sniffnet_cw.dto.model.ModelResponse;
 import ru.yanaeva.sniffnet_cw.dto.user.UserResponse;
 import ru.yanaeva.sniffnet_cw.entity.AppUser;
-import ru.yanaeva.sniffnet_cw.entity.ClassificationProbability;
 import ru.yanaeva.sniffnet_cw.entity.ClassificationRequest;
 import ru.yanaeva.sniffnet_cw.entity.Dataset;
 import ru.yanaeva.sniffnet_cw.entity.Experiment;
@@ -25,6 +25,12 @@ import ru.yanaeva.sniffnet_cw.entity.UploadedImage;
 
 @Service
 public class MapperService {
+
+    private final ObjectMapper objectMapper;
+
+    public MapperService(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     public UserResponse toUserResponse(AppUser user) {
         return new UserResponse(
@@ -135,15 +141,7 @@ public class MapperService {
         );
     }
 
-    public ClassificationResponse toClassificationResponse(
-        ClassificationRequest request,
-        List<ClassificationProbability> probabilities
-    ) {
-        Map<String, java.math.BigDecimal> probabilityMap = new LinkedHashMap<>();
-        for (ClassificationProbability probability : probabilities) {
-            probabilityMap.put(probability.getClassName(), probability.getProbabilityValue());
-        }
-
+    public ClassificationResponse toClassificationResponse(ClassificationRequest request) {
         return new ClassificationResponse(
             request.getId(),
             request.getStatus().name(),
@@ -155,7 +153,30 @@ public class MapperService {
             request.getModel().getName(),
             request.getImage().getId(),
             request.getImage().getStoragePath(),
-            probabilityMap
+            readProbabilities(request.getProbabilitiesJson())
         );
+    }
+
+    public String writeProbabilities(Map<String, java.math.BigDecimal> probabilities) {
+        try {
+            return objectMapper.writeValueAsString(probabilities);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to serialize probabilities", ex);
+        }
+    }
+
+    private Map<String, java.math.BigDecimal> readProbabilities(String probabilitiesJson) {
+        if (probabilitiesJson == null || probabilitiesJson.isBlank()) {
+            return new LinkedHashMap<>();
+        }
+
+        try {
+            return objectMapper.readValue(
+                probabilitiesJson,
+                new TypeReference<LinkedHashMap<String, java.math.BigDecimal>>() { }
+            );
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to deserialize probabilities", ex);
+        }
     }
 }

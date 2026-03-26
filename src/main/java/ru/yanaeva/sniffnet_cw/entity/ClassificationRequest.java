@@ -14,7 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "classification_requests")
@@ -41,9 +41,9 @@ public class ClassificationRequest {
     private ClassificationStatus status = ClassificationStatus.CREATED;
 
     @Column(nullable = false, updatable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
-    private Instant completedAt;
+    private LocalDateTime completedAt;
 
     @Column(length = 100)
     private String predictedClass;
@@ -52,11 +52,11 @@ public class ClassificationRequest {
     private BigDecimal confidence;
 
     @Lob
-    private String rawResponse;
+    private String probabilitiesJson;
 
     @PrePersist
     public void prePersist() {
-        createdAt = Instant.now();
+        createdAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -95,15 +95,15 @@ public class ClassificationRequest {
         this.status = status;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public Instant getCompletedAt() {
+    public LocalDateTime getCompletedAt() {
         return completedAt;
     }
 
-    public void setCompletedAt(Instant completedAt) {
+    public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
     }
 
@@ -123,11 +123,11 @@ public class ClassificationRequest {
         this.confidence = confidence;
     }
 
-    public String getRawResponse() {
-        return rawResponse;
+    public String getProbabilitiesJson() {
+        return probabilitiesJson;
     }
 
-    public void setRawResponse(String rawResponse) {
-        this.rawResponse = rawResponse;
+    public void setProbabilitiesJson(String probabilitiesJson) {
+        this.probabilitiesJson = probabilitiesJson;
     }
 }

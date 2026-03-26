@@ -12,7 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "experiments")
@@ -39,16 +39,16 @@ public class Experiment {
     private ExperimentStatus status = ExperimentStatus.CREATED;
 
     @Column(nullable = false, updatable = false)
-    private Instant startTime;
+    private LocalDateTime startTime;
 
-    private Instant endTime;
+    private LocalDateTime endTime;
 
     @Column(length = 255)
     private String reportPath;
 
     @PrePersist
     public void prePersist() {
-        startTime = Instant.now();
+        startTime = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -87,15 +87,15 @@ public class Experiment {
         this.status = status;
     }
 
-    public Instant getStartTime() {
+    public LocalDateTime getStartTime() {
         return startTime;
     }
 
-    public Instant getEndTime() {
+    public LocalDateTime getEndTime() {
         return endTime;
     }
 
-    public void setEndTime(Instant endTime) {
+    public void setEndTime(LocalDateTime endTime) {
         this.endTime = endTime;
     }
 

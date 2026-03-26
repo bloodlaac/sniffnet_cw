@@ -38,7 +38,10 @@ public class ModelService {
         return PageResponse.from(modelPage
             .map(model -> mapperService.toModelResponse(
                 model,
-                metricRepository.findByModelId(model.getId()).orElse(null)
+                metricRepository.findTopByDatasetIdAndConfigIdOrderByIdDesc(
+                    model.getDataset().getId(),
+                    model.getConfig().getId()
+                ).orElse(null)
             )));
     }
 
@@ -46,12 +49,19 @@ public class ModelService {
         ModelEntity model = getEntity(id);
         return mapperService.toModelResponse(
             model,
-            metricRepository.findByModelId(id).orElse(null)
+            metricRepository.findTopByDatasetIdAndConfigIdOrderByIdDesc(
+                model.getDataset().getId(),
+                model.getConfig().getId()
+            ).orElse(null)
         );
     }
 
     public MetricResponse getMetrics(Long modelId) {
-        Metric metric = metricRepository.findByModelId(modelId)
+        ModelEntity model = getEntity(modelId);
+        Metric metric = metricRepository.findTopByDatasetIdAndConfigIdOrderByIdDesc(
+                model.getDataset().getId(),
+                model.getConfig().getId()
+            )
             .orElseThrow(() -> new NotFoundException("Metrics not found for model"));
         return mapperService.toMetricResponse(metric);
     }

@@ -16,7 +16,7 @@ import { AuthService } from '../core/auth.service';
             <span class="brand-badge">SN</span>
             <div>
               <strong>SniffNet</strong>
-              <p>Food freshness monitor</p>
+              <p>Система оценки свежести продуктов</p>
             </div>
           </a>
 
@@ -27,7 +27,6 @@ import { AuthService } from '../core/auth.service';
                 routerLinkActive="active"
                 class="nav-link"
               >
-                <span>{{ item.icon }}</span>
                 <span>{{ item.label }}</span>
               </a>
             }
@@ -72,12 +71,12 @@ import { AuthService } from '../core/auth.service';
       justify-content: space-between;
       gap: 2rem;
       padding: 1.5rem;
-      background: rgba(16, 35, 31, 0.92);
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(18px);
+      background: var(--color-sidebar);
+      border-right: 1px solid var(--color-sidebar-border);
       position: sticky;
       top: 0;
       height: 100dvh;
+      color: var(--color-text-strong);
     }
 
     .brand {
@@ -103,12 +102,16 @@ import { AuthService } from '../core/auth.service';
 
     .brand-badge {
       display: grid;
+      flex: 0 0 3rem;
       place-items: center;
       width: 3rem;
+      min-width: 3rem;
       height: 3rem;
-      border-radius: 1rem;
-      background: linear-gradient(135deg, #f0c66e, #f57f56);
-      color: #13231f;
+      min-height: 3rem;
+      aspect-ratio: 1 / 1;
+      border-radius: 0.8rem;
+      background: var(--color-highlight);
+      color: var(--color-sidebar);
       font-weight: 700;
     }
 
@@ -122,24 +125,27 @@ import { AuthService } from '../core/auth.service';
       align-items: center;
       gap: 0.8rem;
       padding: 0.9rem 1rem;
-      border-radius: 1rem;
+      border-radius: 0.8rem;
       color: var(--color-text-soft);
       text-decoration: none;
-      transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+      transition: background-color 160ms ease, color 160ms ease;
     }
 
     .nav-link:hover,
     .nav-link.active {
-      background: rgba(255, 255, 255, 0.09);
+      background: var(--color-sidebar-hover);
       color: var(--color-text-strong);
-      transform: translateX(2px);
     }
 
     .profile-card {
       padding: 1rem;
-      border-radius: 1.25rem;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0.8rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--color-sidebar-border);
+    }
+
+    .profile-card strong {
+      color: var(--color-text-strong);
     }
 
     .profile-label {
@@ -153,15 +159,18 @@ import { AuthService } from '../core/auth.service';
       display: inline-flex;
       margin-top: 0.9rem;
       padding: 0.35rem 0.65rem;
-      border-radius: 999px;
-      background: rgba(240, 198, 110, 0.16);
-      color: #f6c36d;
+      border-radius: 0.8rem;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--color-text-strong);
       font-size: 0.82rem;
     }
 
     .ghost-button {
       width: 100%;
       margin-top: 1rem;
+      color: var(--color-text-strong);
+      background: rgba(216, 244, 208, 0.12);
+      border: 1px solid var(--color-sidebar-border);
     }
 
     .content {
@@ -178,7 +187,7 @@ import { AuthService } from '../core/auth.service';
 
     .topbar h1 {
       margin: 0.2rem 0 0;
-      font-size: clamp(2rem, 3.3vw, 3.2rem);
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
     }
 
     .eyebrow {
@@ -218,14 +227,14 @@ export class ShellComponent {
 
   readonly navigation = computed(() => {
     const items = [
-      { label: 'Обзор', link: '/dashboard', icon: '01' },
-      { label: 'Эксперименты', link: '/experiments', icon: '02' },
-      { label: 'Классификация', link: '/classification', icon: '03' },
-      { label: 'История', link: '/history', icon: '04' }
+      { label: 'Обзор', link: '/dashboard' },
+      { label: 'Эксперименты', link: '/experiments' },
+      { label: 'Классификация', link: '/classification' },
+      { label: 'История', link: '/history' }
     ];
 
     if (this.auth.isAdmin()) {
-      items.push({ label: 'Пользователи', link: '/admin/users', icon: '05' });
+      items.push({ label: 'Пользователи', link: '/admin/users' });
     }
 
     return items;

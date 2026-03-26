@@ -42,7 +42,7 @@ public class ModelEntity {
     private Boolean availableForInference = false;
 
     @Column(length = 255)
-    private String externalReference;
+    private String weightsPath;
 
     public Long getId() {
         return id;
@@ -104,11 +104,11 @@ public class ModelEntity {
         this.availableForInference = availableForInference;
     }
 
-    public String getExternalReference() {
-        return externalReference;
+    public String getWeightsPath() {
+        return weightsPath;
     }
 
-    public void setExternalReference(String externalReference) {
-        this.externalReference = externalReference;
+    public void setWeightsPath(String weightsPath) {
+        this.weightsPath = weightsPath;
     }
 }

@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public record TrainingResult(
         boolean success,
         String modelName,
-        String externalReference,
+        String weightsPath,
         Integer paramsNum,
         Long trainingTimeSeconds,
         BigDecimal trainAccuracy,

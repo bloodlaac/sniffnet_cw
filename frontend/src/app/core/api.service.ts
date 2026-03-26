@@ -33,6 +33,13 @@ export class ApiService {
     return this.http.post<T>(this.url(path), formData);
   }
 
+  getBlob(path: string, params?: Record<string, ParamValue>): Observable<Blob> {
+    return this.http.get(this.url(path), {
+      params: this.buildParams(params),
+      responseType: 'blob'
+    });
+  }
+
   assetUrl(path: string): string {
     return this.url(path);
   }

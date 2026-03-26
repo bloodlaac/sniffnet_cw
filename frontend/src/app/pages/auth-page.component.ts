@@ -12,21 +12,32 @@ import { formatApiError } from '../core/api.utils';
   template: `
     <section class="auth-layout">
       <div class="auth-copy card">
-        <p class="eyebrow">SniffNet</p>
-        <h1>Здесь только свежее</h1>
+        <div class="auth-copy-inner">
+          <div>
+            <p class="eyebrow">SniffNet</p>
+            <h1>Оценка свежести продуктов по фотографии</h1>
+            <p class="lead">
+              Учебное веб-приложение для курсовой работы по Java Spring и Angular.
+            </p>
+          </div>
 
-        <div class="feature-list">
-          <div>
-            <strong>Эксперименты</strong>
-            <p>Создание экспериментов с различными конфигурациями.</p>
+          <div class="auth-points">
+            <div class="auth-point">
+              <strong>Работа с моделями</strong>
+              <p>Просмотр доступных моделей и их метрик.</p>
+            </div>
+            <div class="auth-point">
+              <strong>Эксперименты обучения</strong>
+              <p>Создание и просмотр запусков обучения.</p>
+            </div>
+            <div class="auth-point">
+              <strong>Инференс по фото</strong>
+              <p>Загрузка изображения и получение результата классификации.</p>
+            </div>
           </div>
-          <div>
-            <strong>Выбор моделей</strong>
-            <p>Выбор модели, подходящей для вашей задачи.</p>
-          </div>
-          <div>
-            <strong>Определение свежести</strong>
-            <p>Определение свежести продуктов с высокой вероятностью.</p>
+
+          <div class="auth-note">
+            Доступ к системе выполняется после регистрации или входа в учетную запись.
           </div>
         </div>
       </div>
@@ -107,39 +118,66 @@ import { formatApiError } from '../core/api.utils';
     }
 
     .auth-copy {
-      background:
-        radial-gradient(circle at top right, rgba(240, 198, 110, 0.16), transparent 28rem),
-        linear-gradient(160deg, rgba(4, 79, 63, 0.95), rgba(21, 48, 43, 0.94));
+      background: var(--color-sidebar);
+      color: var(--color-text-strong);
+      display: flex;
+    }
+
+    .auth-copy-inner {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 2rem;
+      width: 100%;
     }
 
     .auth-copy h1 {
-      font-size: clamp(2.4rem, 6vw, 4.8rem);
+      font-size: clamp(2.4rem, 4.5vw, 3.6rem);
       margin: 0.5rem 0 1rem;
-      max-width: 10ch;
+      max-width: 12ch;
+      color: var(--color-text-strong);
+      line-height: 1.08;
     }
 
-    .auth-copy > p {
-      max-width: 38rem;
+    .lead {
+      max-width: 28rem;
       color: var(--color-text-soft);
-      font-size: 1.05rem;
+      font-size: 1.08rem;
+      line-height: 1.6;
+      margin: 0;
     }
 
-    .feature-list {
+    .auth-points {
       display: grid;
-      gap: 1rem;
-      margin-top: 2rem;
+      gap: 0.85rem;
     }
 
-    .feature-list div {
-      padding: 1rem;
-      border-radius: 1.1rem;
+    .auth-point {
+      padding: 1rem 1.1rem;
+      border-radius: 0.8rem;
       background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .feature-list p {
-      margin: 0.35rem 0 0;
+    .auth-point strong {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: var(--color-text-strong);
+      font-size: 1rem;
+    }
+
+    .auth-point p,
+    .auth-note {
+      margin: 0;
       color: var(--color-text-soft);
+      line-height: 1.5;
+    }
+
+    .auth-note {
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 0.95rem;
+      max-width: 28rem;
     }
 
     .auth-panel {
@@ -152,21 +190,21 @@ import { formatApiError } from '../core/api.utils';
     .tabs {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      background: rgba(16, 35, 31, 0.06);
+      background: var(--color-surface-tint);
       padding: 0.3rem;
-      border-radius: 999px;
+      border-radius: 0.8rem;
     }
 
     .tabs button {
       border: 0;
       background: transparent;
       padding: 0.85rem 1rem;
-      border-radius: 999px;
+      border-radius: 0.6rem;
       color: var(--color-text-muted);
     }
 
     .tabs button.active {
-      background: #10231f;
+      background: var(--color-accent-strong);
       color: var(--color-text-strong);
     }
 
@@ -184,6 +222,10 @@ import { formatApiError } from '../core/api.utils';
       .auth-copy,
       .auth-panel {
         min-height: auto;
+      }
+
+      .auth-copy h1 {
+        max-width: none;
       }
     }
   `

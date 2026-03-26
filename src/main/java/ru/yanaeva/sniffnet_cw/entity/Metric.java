@@ -21,8 +21,12 @@ public class Metric {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "model_id", nullable = false)
-    private ModelEntity model;
+    @JoinColumn(name = "dataset_id", nullable = false)
+    private Dataset dataset;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "config_id", nullable = false)
+    private TrainingConfig config;
 
     @Column(nullable = false, precision = 5, scale = 4)
     private BigDecimal trainAccuracy;
@@ -43,12 +47,20 @@ public class Metric {
         return id;
     }
 
-    public ModelEntity getModel() {
-        return model;
+    public Dataset getDataset() {
+        return dataset;
     }
 
-    public void setModel(ModelEntity model) {
-        this.model = model;
+    public void setDataset(Dataset dataset) {
+        this.dataset = dataset;
+    }
+
+    public TrainingConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(TrainingConfig config) {
+        this.config = config;
     }
 
     public BigDecimal getTrainAccuracy() {

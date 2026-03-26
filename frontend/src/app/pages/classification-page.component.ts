@@ -1,6 +1,6 @@
 import { CommonModule, DecimalPipe, KeyValuePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
+import { catchError, of } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { Classification, Dataset, Model, PageResponse } from '../core/api.models';
 import { formatApiError } from '../core/api.utils';
@@ -8,7 +8,7 @@ import { formatApiError } from '../core/api.utils';
 @Component({
   selector: 'app-classification-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DecimalPipe, KeyValuePipe],
+  imports: [CommonModule, DecimalPipe, KeyValuePipe],
   template: `
     @if (error()) {
       <div class="error-banner">{{ error() }}</div>
@@ -64,20 +64,75 @@ import { formatApiError } from '../core/api.utils';
         <p class="eyebrow">Upload</p>
         <h2>Отправка изображения</h2>
 
-        <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
-          <label>
-            ID модели
-            <input type="number" formControlName="modelId" min="1" />
-          </label>
+        @if (selectedModel(); as model) {
+          <div class="selected-model card-shell">
+            <div class="selected-model-head">
+              <div>
+                <span class="selected-label">Выбранная модель</span>
+                <strong>{{ model.name }}</strong>
+              </div>
+              <span class="selected-dataset">{{ model.datasetName }}</span>
+            </div>
 
-          <label class="upload-box">
-            <input type="file" accept=".jpg,.jpeg,.png,image/png,image/jpeg" (change)="handleFile($event)" />
-            <span>Выбрать JPG или PNG</span>
-            <small>Максимум 5 MB</small>
-          </label>
+            <div class="selected-metrics">
+              <div>
+                <span>Точность</span>
+                <strong>
+                  @if (model.metrics?.validationAccuracy) {
+                    {{ model.metrics?.validationAccuracy | number: '1.2-2' }}
+                  } @else {
+                    n/a
+                  }
+                </strong>
+              </div>
+              <div>
+                <span>Потери</span>
+                <strong>
+                  @if (model.metrics?.validationLoss) {
+                    {{ model.metrics?.validationLoss | number: '1.2-2' }}
+                  } @else {
+                    n/a
+                  }
+                </strong>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="selection-hint">
+            Выберите модель слева.
+          </div>
+        }
+
+        <form class="form-grid" (ngSubmit)="submit()">
+          @if (!previewUrl()) {
+            <label class="upload-box">
+              <input type="file" accept=".jpg,.jpeg,.png,image/png,image/jpeg" (change)="handleFile($event)" />
+              <span>Выбрать JPG или PNG</span>
+              <small>Максимум 5 MB</small>
+            </label>
+          } @else {
+            <div class="selected-file-bar">
+              <div>
+                <span class="selected-label">Выбранный файл</span>
+                <strong>{{ selectedFileName() }}</strong>
+              </div>
+
+              <div class="file-actions">
+                <label class="ghost-button inline-upload-button">
+                  <input type="file" accept=".jpg,.jpeg,.png,image/png,image/jpeg" (change)="handleFile($event)" />
+                  <span>Заменить</span>
+                </label>
+                <button type="button" class="ghost-button danger-button" (click)="clearFile()">
+                  Убрать
+                </button>
+              </div>
+            </div>
+          }
 
           @if (previewUrl()) {
-            <img class="preview-image" [src]="previewUrl()" alt="preview" />
+            <div class="preview-frame">
+              <img class="preview-image" [src]="previewUrl()" alt="preview" />
+            </div>
           }
 
           <button type="submit" class="primary-button" [disabled]="submitting()">
@@ -110,7 +165,9 @@ import { formatApiError } from '../core/api.utils';
               }
             </div>
 
-            <img class="result-image" [src]="api.assetUrl('/api/files/images/' + item.imageId + '/content')" alt="uploaded image" />
+            @if (resultImageUrl()) {
+              <img class="result-image" [src]="resultImageUrl()" alt="uploaded image" />
+            }
           </div>
         }
       </article>
@@ -144,15 +201,15 @@ import { formatApiError } from '../core/api.utils';
       text-align: left;
       width: 100%;
       padding: 1rem;
-      border-radius: 1rem;
-      border: 1px solid rgba(16, 35, 31, 0.08);
-      background: rgba(16, 35, 31, 0.03);
-      transition: transform 160ms ease, border-color 160ms ease;
+      border-radius: 0.8rem;
+      border: 1px solid rgba(28, 71, 44, 0.12);
+      background: var(--color-surface-tint);
+      transition: border-color 160ms ease;
     }
 
     .model-card.active {
-      border-color: rgba(245, 127, 86, 0.55);
-      transform: translateY(-1px);
+      border-color: var(--color-accent);
+      background: #e8f3e5;
     }
 
     .model-top {
@@ -165,6 +222,22 @@ import { formatApiError } from '../core/api.utils';
       color: var(--color-text-muted);
     }
 
+    .card-shell,
+    .selection-hint {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 0.8rem;
+      background: var(--color-surface-tint);
+      border: 1px solid rgba(28, 71, 44, 0.12);
+    }
+
+    .selected-model {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .selected-model-head,
+    .selected-metrics,
     .metric-line,
     .result-head,
     .probability-item {
@@ -174,14 +247,77 @@ import { formatApiError } from '../core/api.utils';
       align-items: center;
     }
 
+    .selected-label,
+    .selected-metrics span,
+    .selected-dataset {
+      color: var(--color-text-muted);
+    }
+
+    .selected-label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .selected-metrics > div {
+      flex: 1;
+      padding: 0.85rem 0.9rem;
+      border-radius: 0.8rem;
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+    }
+
+    .selected-metrics > div span {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.85rem;
+    }
+
+    .selected-file-bar {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 0.8rem;
+      background: var(--color-surface-tint);
+      border: 1px solid rgba(28, 71, 44, 0.12);
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .inline-upload-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .inline-upload-button input {
+      display: none;
+    }
+
+    .danger-button {
+      color: var(--color-danger-text);
+      border-color: rgba(165, 63, 31, 0.18);
+      background: var(--color-danger-bg);
+    }
+
     .upload-box {
       display: grid;
       place-items: center;
       gap: 0.3rem;
       min-height: 11rem;
-      border: 1px dashed rgba(16, 35, 31, 0.18);
-      border-radius: 1rem;
-      background: rgba(16, 35, 31, 0.03);
+      border: 1px dashed var(--color-accent);
+      border-radius: 0.8rem;
+      background: var(--color-surface-tint);
       cursor: pointer;
       text-align: center;
     }
@@ -194,13 +330,23 @@ import { formatApiError } from '../core/api.utils';
       color: var(--color-text-muted);
     }
 
+    .preview-frame {
+      display: grid;
+      place-items: center;
+      min-height: 18rem;
+      padding: 1rem;
+      border-radius: 0.8rem;
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+    }
+
     .preview-image,
     .result-image {
       width: 100%;
-      border-radius: 1rem;
-      object-fit: cover;
+      border-radius: 0.8rem;
+      object-fit: contain;
       max-height: 18rem;
-      background: rgba(16, 35, 31, 0.05);
+      background: var(--color-surface-tint);
     }
 
     .result-box {
@@ -208,7 +354,7 @@ import { formatApiError } from '../core/api.utils';
       gap: 1rem;
       margin-top: 1.5rem;
       padding-top: 1.5rem;
-      border-top: 1px solid rgba(16, 35, 31, 0.08);
+      border-top: 1px solid var(--color-border);
     }
 
     .result-head h3 {
@@ -222,8 +368,8 @@ import { formatApiError } from '../core/api.utils';
 
     .probability-item {
       padding: 0.8rem 0.9rem;
-      border-radius: 0.95rem;
-      background: rgba(16, 35, 31, 0.04);
+      border-radius: 0.8rem;
+      background: var(--color-surface-tint);
     }
 
     @media (max-width: 1120px) {
@@ -231,29 +377,49 @@ import { formatApiError } from '../core/api.utils';
         grid-template-columns: 1fr;
       }
     }
+
+    @media (max-width: 720px) {
+      .selected-model-head,
+      .selected-metrics,
+      .selected-file-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .file-actions {
+        width: 100%;
+      }
+
+      .file-actions > * {
+        flex: 1;
+      }
+    }
   `
 })
-export class ClassificationPageComponent {
+export class ClassificationPageComponent implements OnDestroy {
   readonly api = inject(ApiService);
-  private readonly fb = inject(FormBuilder);
 
   readonly datasets = signal<Dataset[]>([]);
   readonly models = signal<Model[]>([]);
   readonly datasetFilter = signal('');
   readonly selectedModelId = signal<number | null>(null);
   readonly previewUrl = signal('');
+  readonly selectedFileName = signal('');
+  readonly resultImageUrl = signal('');
   readonly submitting = signal(false);
   readonly error = signal('');
   readonly result = signal<Classification | null>(null);
   private selectedFile: File | null = null;
-
-  readonly form = this.fb.nonNullable.group({
-    modelId: [0, [Validators.required, Validators.min(1)]]
-  });
+  readonly selectedModel = computed(() => this.models().find((item) => item.id === this.selectedModelId()) ?? null);
 
   constructor() {
     this.loadDatasets();
     this.loadModels();
+  }
+
+  ngOnDestroy(): void {
+    this.revokeUrl(this.previewUrl());
+    this.revokeUrl(this.resultImageUrl());
   }
 
   selectDataset(value: string): void {
@@ -263,18 +429,23 @@ export class ClassificationPageComponent {
 
   pickModel(modelId: number): void {
     this.selectedModelId.set(modelId);
-    this.form.patchValue({ modelId });
   }
 
   handleFile(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0] ?? null;
     this.selectedFile = file;
-    this.previewUrl.set(file ? URL.createObjectURL(file) : '');
+    this.selectedFileName.set(file?.name ?? '');
+    this.setPreviewUrl(file ? URL.createObjectURL(file) : '');
+  }
+
+  clearFile(): void {
+    this.selectedFile = null;
+    this.selectedFileName.set('');
+    this.setPreviewUrl('');
   }
 
   submit(): void {
-    if (this.form.invalid || !this.selectedFile) {
-      this.form.markAllAsTouched();
+    if (!this.selectedModelId() || !this.selectedFile) {
       this.error.set('Нужно выбрать модель и файл изображения.');
       return;
     }
@@ -284,13 +455,14 @@ export class ClassificationPageComponent {
     this.result.set(null);
 
     const formData = new FormData();
-    formData.append('modelId', String(this.form.getRawValue().modelId));
+    formData.append('modelId', String(this.selectedModelId()));
     formData.append('file', this.selectedFile);
 
     this.api.postFormData<Classification>('/classifications', formData).subscribe({
       next: (response) => {
         this.submitting.set(false);
         this.result.set(response);
+        this.loadResultImage(response.imageId);
       },
       error: (err) => {
         this.submitting.set(false);
@@ -308,8 +480,40 @@ export class ClassificationPageComponent {
 
   private loadModels(datasetId?: number): void {
     this.api.get<PageResponse<Model>>('/models', { size: 20, datasetId }).subscribe({
-      next: (response) => this.models.set(response.content.filter((item) => item.availableForInference)),
+      next: (response) => {
+        const models = response.content.filter((item) => item.availableForInference);
+        this.models.set(models);
+
+        if (!models.some((item) => item.id === this.selectedModelId())) {
+          this.selectedModelId.set(null);
+        }
+      },
       error: (err) => this.error.set(formatApiError(err))
     });
+  }
+
+  private setPreviewUrl(nextUrl: string): void {
+    const currentUrl = this.previewUrl();
+    this.revokeUrl(currentUrl);
+    this.previewUrl.set(nextUrl);
+  }
+
+  private loadResultImage(imageId: number): void {
+    this.revokeUrl(this.resultImageUrl());
+    this.resultImageUrl.set('');
+
+    this.api.getBlob(`/files/images/${imageId}/content`).pipe(
+      catchError(() => of(null))
+    ).subscribe((blob) => {
+      if (blob) {
+        this.resultImageUrl.set(URL.createObjectURL(blob));
+      }
+    });
+  }
+
+  private revokeUrl(url: string): void {
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
   }
 }

@@ -99,7 +99,8 @@ import { formatApiError } from '../core/api.utils';
     .info-grid div {
       padding: 0.95rem;
       border-radius: 1rem;
-      background: rgba(16, 35, 31, 0.04);
+      background: var(--color-surface-tint);
+      border: 1px solid rgba(28, 71, 44, 0.08);
     }
 
     .info-grid span {

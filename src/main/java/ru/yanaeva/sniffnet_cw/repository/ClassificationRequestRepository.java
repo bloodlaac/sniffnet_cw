@@ -1,6 +1,6 @@
 package ru.yanaeva.sniffnet_cw.repository;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,10 +11,14 @@ public interface ClassificationRequestRepository extends JpaRepository<Classific
 
     Page<ClassificationRequest> findByUserIdAndCreatedAtBetween(
         Long userId,
-        Instant from,
-        Instant to,
+        LocalDateTime from,
+        LocalDateTime to,
         Pageable pageable
     );
 
-    Page<ClassificationRequest> findByCreatedAtBetween(Instant from, Instant to, Pageable pageable);
+    Page<ClassificationRequest> findByCreatedAtBetween(
+        LocalDateTime from,
+        LocalDateTime to,
+        Pageable pageable
+    );
 }

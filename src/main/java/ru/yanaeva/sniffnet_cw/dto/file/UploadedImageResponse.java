@@ -1,6 +1,6 @@
 package ru.yanaeva.sniffnet_cw.dto.file;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public record UploadedImageResponse(
         Long id,
@@ -10,6 +10,6 @@ public record UploadedImageResponse(
         String contentType,
         Long sizeBytes,
         String storagePath,
-        Instant uploadedAt
+        LocalDateTime uploadedAt
 ) {
 }

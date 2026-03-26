@@ -1,10 +1,7 @@
 package ru.yanaeva.sniffnet_cw.service;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +13,6 @@ import ru.yanaeva.sniffnet_cw.dto.classification.ClassificationResponse;
 import ru.yanaeva.sniffnet_cw.dto.common.PageResponse;
 import ru.yanaeva.sniffnet_cw.dto.file.UploadedImageResponse;
 import ru.yanaeva.sniffnet_cw.entity.AppUser;
-import ru.yanaeva.sniffnet_cw.entity.ClassificationProbability;
 import ru.yanaeva.sniffnet_cw.entity.ClassificationRequest;
 import ru.yanaeva.sniffnet_cw.entity.ClassificationStatus;
 import ru.yanaeva.sniffnet_cw.entity.ModelEntity;
@@ -26,14 +22,12 @@ import ru.yanaeva.sniffnet_cw.exception.NotFoundException;
 import ru.yanaeva.sniffnet_cw.integration.ClassificationAdapter;
 import ru.yanaeva.sniffnet_cw.integration.ClassificationCommand;
 import ru.yanaeva.sniffnet_cw.integration.ClassificationResult;
-import ru.yanaeva.sniffnet_cw.repository.ClassificationProbabilityRepository;
 import ru.yanaeva.sniffnet_cw.repository.ClassificationRequestRepository;
 
 @Service
 public class ClassificationService {
 
     private final ClassificationRequestRepository classificationRequestRepository;
-    private final ClassificationProbabilityRepository classificationProbabilityRepository;
     private final ModelService modelService;
     private final StorageService storageService;
     private final ClassificationAdapter classificationAdapter;
@@ -41,14 +35,12 @@ public class ClassificationService {
 
     public ClassificationService(
         ClassificationRequestRepository classificationRequestRepository,
-        ClassificationProbabilityRepository classificationProbabilityRepository,
         ModelService modelService,
         StorageService storageService,
         ClassificationAdapter classificationAdapter,
         MapperService mapperService
     ) {
         this.classificationRequestRepository = classificationRequestRepository;
-        this.classificationProbabilityRepository = classificationProbabilityRepository;
         this.modelService = modelService;
         this.storageService = storageService;
         this.classificationAdapter = classificationAdapter;
@@ -85,23 +77,15 @@ public class ClassificationService {
         );
 
         savedRequest.setStatus(ClassificationStatus.COMPLETED);
-        savedRequest.setCompletedAt(Instant.now());
+        savedRequest.setCompletedAt(LocalDateTime.now());
         savedRequest.setPredictedClass(result.predictedClass());
         savedRequest.setConfidence(result.confidence());
-        savedRequest.setRawResponse(result.message());
+        savedRequest.setProbabilitiesJson(
+            mapperService.writeProbabilities(result.classProbabilities())
+        );
         savedRequest = classificationRequestRepository.save(savedRequest);
 
-        List<ClassificationProbability> probabilities = new ArrayList<>();
-        for (var entry : result.classProbabilities().entrySet()) {
-            ClassificationProbability probability = new ClassificationProbability();
-            probability.setRequest(savedRequest);
-            probability.setClassName(entry.getKey());
-            probability.setProbabilityValue(entry.getValue());
-            probabilities.add(probability);
-        }
-        probabilities = classificationProbabilityRepository.saveAll(probabilities);
-
-        return mapperService.toClassificationResponse(savedRequest, probabilities);
+        return mapperService.toClassificationResponse(savedRequest);
     }
 
     public PageResponse<ClassificationResponse> getClassifications(
@@ -114,22 +98,21 @@ public class ClassificationService {
         String sort
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort).descending());
-        Instant fromInstant = from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC);
-        Instant toInstant = to == null ? null : to
-        .plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        LocalDateTime fromDateTime = from == null ? null : from.atStartOfDay();
+        LocalDateTime toDateTime = to == null ? null : to.plusDays(1).atStartOfDay();
 
         Page<ClassificationRequest> requestPage;
-        if (admin && fromInstant != null && toInstant != null) {
+        if (admin && fromDateTime != null && toDateTime != null) {
             requestPage = classificationRequestRepository.findByCreatedAtBetween(
-                fromInstant,
-                toInstant,
+                fromDateTime,
+                toDateTime,
                 pageable
             );
-        } else if (!admin && fromInstant != null && toInstant != null) {
+        } else if (!admin && fromDateTime != null && toDateTime != null) {
             requestPage = classificationRequestRepository.findByUserIdAndCreatedAtBetween(
                 currentUser.getId(),
-                fromInstant,
-                toInstant,
+                fromDateTime,
+                toDateTime,
                 pageable
             );
         } else if (admin) {
@@ -166,9 +149,6 @@ public class ClassificationService {
     }
 
     private ClassificationResponse toClassificationResponse(ClassificationRequest request) {
-        return mapperService.toClassificationResponse(
-            request,
-            classificationProbabilityRepository.findByRequestIdOrderByIdAsc(request.getId())
-        );
+        return mapperService.toClassificationResponse(request);
     }
 }

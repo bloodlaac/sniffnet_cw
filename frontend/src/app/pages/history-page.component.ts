@@ -1,6 +1,7 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { catchError, forkJoin, map, of } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { Classification, PageResponse } from '../core/api.models';
 import { formatApiError } from '../core/api.utils';
@@ -37,7 +38,9 @@ import { formatApiError } from '../core/api.utils';
       <div class="history-grid">
         @for (item of history(); track item.id) {
           <article class="history-card">
-            <img [src]="api.assetUrl('/api/files/images/' + item.imageId + '/content')" alt="history image" />
+            @if (imageUrl(item.imageId); as src) {
+              <img [src]="src" alt="history image" />
+            }
             <div class="history-body">
               <div class="history-head">
                 <strong>{{ item.predictedClass || 'Ожидание' }}</strong>
@@ -90,7 +93,8 @@ import { formatApiError } from '../core/api.utils';
     .history-card {
       overflow: hidden;
       border-radius: 1.1rem;
-      background: rgba(16, 35, 31, 0.04);
+      background: var(--color-surface-tint);
+      border: 1px solid rgba(28, 71, 44, 0.1);
     }
 
     .history-card img {
@@ -134,11 +138,12 @@ import { formatApiError } from '../core/api.utils';
     }
   `
 })
-export class HistoryPageComponent {
+export class HistoryPageComponent implements OnDestroy {
   readonly api = inject(ApiService);
   private readonly fb = inject(FormBuilder);
 
   readonly history = signal<Classification[]>([]);
+  readonly imageUrls = signal<Record<number, string>>({});
   readonly error = signal('');
 
   readonly filterForm = this.fb.nonNullable.group({
@@ -150,6 +155,10 @@ export class HistoryPageComponent {
     this.load();
   }
 
+  ngOnDestroy(): void {
+    this.clearImageUrls();
+  }
+
   load(): void {
     const value = this.filterForm.getRawValue();
     this.api
@@ -159,8 +168,45 @@ export class HistoryPageComponent {
         to: value.to || undefined
       })
       .subscribe({
-        next: (response) => this.history.set(response.content),
+        next: (response) => {
+          this.history.set(response.content);
+          this.loadImages(response.content);
+        },
         error: (err) => this.error.set(formatApiError(err))
       });
+  }
+
+  imageUrl(imageId: number): string {
+    return this.imageUrls()[imageId] || '';
+  }
+
+  private loadImages(items: Classification[]): void {
+    this.clearImageUrls();
+
+    if (items.length === 0) {
+      return;
+    }
+
+    forkJoin(
+      items.map((item) =>
+        this.api.getBlob(`/files/images/${item.imageId}/content`).pipe(
+          map((blob) => ({ imageId: item.imageId, url: URL.createObjectURL(blob) })),
+          catchError(() => of({ imageId: item.imageId, url: '' }))
+        )
+      )
+    ).subscribe((results) => {
+      const nextUrls: Record<number, string> = {};
+      for (const result of results) {
+        if (result.url) {
+          nextUrls[result.imageId] = result.url;
+        }
+      }
+      this.imageUrls.set(nextUrls);
+    });
+  }
+
+  private clearImageUrls(): void {
+    Object.values(this.imageUrls()).forEach((url) => URL.revokeObjectURL(url));
+    this.imageUrls.set({});
   }
 }

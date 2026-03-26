@@ -169,8 +169,8 @@ import { formatApiError } from '../core/api.utils';
       border-radius: 1.1rem;
       color: inherit;
       text-decoration: none;
-      background: rgba(16, 35, 31, 0.04);
-      border: 1px solid rgba(16, 35, 31, 0.06);
+      background: var(--color-surface-tint);
+      border: 1px solid rgba(28, 71, 44, 0.1);
     }
 
     .experiment-card p {
@@ -189,19 +189,19 @@ import { formatApiError } from '../core/api.utils';
     .status-chip {
       padding: 0.3rem 0.7rem;
       border-radius: 999px;
-      background: rgba(240, 198, 110, 0.18);
-      color: #8b6320;
+      background: var(--color-warning-bg);
+      color: var(--color-warning-text);
       font-size: 0.82rem;
     }
 
     .status-chip.success {
-      background: rgba(74, 161, 116, 0.16);
-      color: #2f7c53;
+      background: var(--color-success-bg);
+      color: var(--color-success-text);
     }
 
     .status-chip.failed {
-      background: rgba(210, 90, 69, 0.14);
-      color: #ab4d3d;
+      background: var(--color-danger-bg);
+      color: var(--color-danger-text);
     }
 
     @media (max-width: 1120px) {
