@@ -29,14 +29,10 @@ public class AppUser {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
-    private Boolean active = true;
-
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -70,14 +66,6 @@ public class AppUser {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public Boolean getActive() {
-        return active;
-    }
-
-    public void setActive(Boolean active) {
-        this.active = active;
     }
 
     public Role getRole() {

@@ -34,8 +34,10 @@ import { AuthService } from '../core/auth.service';
         </div>
 
         <div class="profile-card">
-          <p class="profile-label">Текущий пользователь</p>
-          <strong>{{ auth.currentUser()?.username }}</strong>
+          <p class="profile-label">Пользователь</p>
+          <a class="profile-link" routerLink="/profile">
+            <strong>{{ auth.currentUser()?.username }}</strong>
+          </a>
           <p>{{ auth.currentUser()?.email }}</p>
           <span class="role-chip">{{ auth.currentUser()?.role }}</span>
           <button type="button" class="ghost-button" (click)="logout()">Выйти</button>
@@ -146,6 +148,15 @@ import { AuthService } from '../core/auth.service';
 
     .profile-card strong {
       color: var(--color-text-strong);
+    }
+
+    .profile-link {
+      color: var(--color-text-strong);
+      text-decoration: none;
+    }
+
+    .profile-link:hover {
+      text-decoration: underline;
     }
 
     .profile-label {

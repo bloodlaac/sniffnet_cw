@@ -2,9 +2,10 @@ import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { ApiService } from '../core/api.service';
-import { Dataset, Experiment, ExperimentStatus, PageResponse } from '../core/api.models';
+import { AuthService } from '../core/auth.service';
+import { Dataset, Experiment, ExperimentStatus, User } from '../core/api.models';
 import { formatApiError } from '../core/api.utils';
 
 @Component({
@@ -25,61 +26,65 @@ import { formatApiError } from '../core/api.utils';
           </div>
         </div>
 
-        <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
-          <label>
-            Датасет
-            <select formControlName="datasetId">
-              <option value="">Выберите датасет</option>
-              @for (dataset of datasets(); track dataset.id) {
-                <option [value]="dataset.id">{{ dataset.name }}</option>
-              }
-            </select>
-          </label>
+        @if (!auth.isAdmin()) {
+          <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
+            <label>
+              Датасет
+              <select formControlName="datasetId">
+                <option value="">Выберите датасет</option>
+                @for (dataset of datasets(); track dataset.id) {
+                  <option [value]="dataset.id">{{ dataset.name }}</option>
+                }
+              </select>
+            </label>
 
-          <label>
-            Эпохи
-            <input type="number" formControlName="epochsNum" min="1" />
-          </label>
+            <label>
+              Эпохи
+              <input type="number" formControlName="epochsNum" min="1" />
+            </label>
 
-          <label>
-            Batch size
-            <input type="number" formControlName="batchSize" min="1" />
-          </label>
+            <label>
+              Batch size
+              <input type="number" formControlName="batchSize" min="1" />
+            </label>
 
-          <label>
-            Learning rate
-            <input type="number" formControlName="learningRate" min="0.000001" step="0.0001" />
-          </label>
+            <label>
+              Learning rate
+              <input type="number" formControlName="learningRate" min="0.000001" step="0.0001" />
+            </label>
 
-          <label>
-            Optimizer
-            <input type="text" formControlName="optimizer" />
-          </label>
+            <label>
+              Optimizer
+              <input type="text" formControlName="optimizer" />
+            </label>
 
-          <label>
-            Loss function
-            <input type="text" formControlName="lossFunction" />
-          </label>
+            <label>
+              Loss function
+              <input type="text" formControlName="lossFunction" />
+            </label>
 
-          <label>
-            Validation split
-            <input type="number" formControlName="validationSplit" min="0.01" max="0.99" step="0.01" />
-          </label>
+            <label>
+              Validation split
+              <input type="number" formControlName="validationSplit" min="0.01" max="0.99" step="0.01" />
+            </label>
 
-          <label>
-            Layers
-            <input type="number" formControlName="layersNum" min="1" />
-          </label>
+            <label>
+              Layers
+              <input type="number" formControlName="layersNum" min="1" />
+            </label>
 
-          <label>
-            Neurons
-            <input type="number" formControlName="neuronsNum" min="1" />
-          </label>
+            <label>
+              Neurons
+              <input type="number" formControlName="neuronsNum" min="1" />
+            </label>
 
-          <button type="submit" class="primary-button" [disabled]="submitting()">
-            {{ submitting() ? 'Создаем...' : 'Запустить эксперимент' }}
-          </button>
-        </form>
+            <button type="submit" class="primary-button" [disabled]="submitting()">
+              {{ submitting() ? 'Создаем...' : 'Запустить эксперимент' }}
+            </button>
+          </form>
+        } @else {
+          <p class="muted">Администратор не может запускать обучение.</p>
+        }
       </article>
 
       <article class="card">
@@ -98,6 +103,18 @@ import { formatApiError } from '../core/api.utils';
               }
             </select>
           </label>
+
+          @if (auth.isAdmin()) {
+            <label class="filter-select">
+              <span>Пользователь</span>
+              <select [value]="userFilter()" (change)="changeUser($any($event.target).value)">
+                <option value="">Все</option>
+                @for (user of users(); track user.id) {
+                  <option [value]="user.id">{{ user.username }}</option>
+                }
+              </select>
+            </label>
+          }
         </div>
 
         <div class="experiment-list">
@@ -105,9 +122,20 @@ import { formatApiError } from '../core/api.utils';
             <a class="experiment-card" [routerLink]="['/experiments', experiment.id]">
               <div class="experiment-head">
                 <strong>#{{ experiment.id }} · {{ experiment.datasetName }}</strong>
-                <span class="status-chip" [class.success]="experiment.status === 'COMPLETED'" [class.failed]="experiment.status === 'FAILED'">
-                  {{ experiment.status }}
-                </span>
+                <div class="experiment-actions">
+                  <span class="status-chip" [class.success]="experiment.status === 'COMPLETED'" [class.failed]="experiment.status === 'FAILED'">
+                    {{ experiment.status }}
+                  </span>
+                  @if (auth.isAdmin()) {
+                    <button
+                      type="button"
+                      class="ghost-button danger-button"
+                      (click)="removeExperiment($event, experiment.id)"
+                    >
+                      Удалить
+                    </button>
+                  }
+                </div>
               </div>
 
               <p>Старт: {{ experiment.startTime | date: 'dd.MM.yyyy HH:mm' }}</p>
@@ -186,6 +214,12 @@ import { formatApiError } from '../core/api.utils';
       align-items: center;
     }
 
+    .experiment-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
     .status-chip {
       padding: 0.3rem 0.7rem;
       border-radius: 999px;
@@ -204,6 +238,12 @@ import { formatApiError } from '../core/api.utils';
       color: var(--color-danger-text);
     }
 
+    .danger-button {
+      color: var(--color-danger-text);
+      border-color: rgba(165, 63, 31, 0.18);
+      background: var(--color-danger-bg);
+    }
+
     @media (max-width: 1120px) {
       .page-grid {
         grid-template-columns: 1fr;
@@ -214,11 +254,14 @@ import { formatApiError } from '../core/api.utils';
 export class ExperimentsPageComponent {
   private readonly api = inject(ApiService);
   private readonly fb = inject(FormBuilder);
+  readonly auth = inject(AuthService);
 
   readonly statuses: ExperimentStatus[] = ['CREATED', 'RUNNING', 'COMPLETED', 'FAILED'];
   readonly datasets = signal<Dataset[]>([]);
+  readonly users = signal<User[]>([]);
   readonly experiments = signal<Experiment[]>([]);
   readonly statusFilter = signal('');
+  readonly userFilter = signal('');
   readonly error = signal('');
   readonly submitting = signal(false);
 
@@ -240,6 +283,11 @@ export class ExperimentsPageComponent {
 
   changeStatus(value: string): void {
     this.statusFilter.set(value);
+    this.loadExperiments();
+  }
+
+  changeUser(value: string): void {
+    this.userFilter.set(value);
     this.loadExperiments();
   }
 
@@ -277,14 +325,30 @@ export class ExperimentsPageComponent {
     });
   }
 
+  removeExperiment(event: Event, experimentId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!confirm(`Удалить эксперимент #${experimentId}?`)) {
+      return;
+    }
+
+    this.api.delete(`/experiments/${experimentId}`).subscribe({
+      next: () => this.loadExperiments(),
+      error: (err) => this.error.set(formatApiError(err))
+    });
+  }
+
   private loadInitial(): void {
     forkJoin({
       datasets: this.api.get<Dataset[]>('/datasets'),
-      experiments: this.api.get<PageResponse<Experiment>>('/experiments', { size: 20 })
+      experiments: this.api.get<Experiment[]>('/experiments'),
+      users: this.auth.isAdmin() ? this.api.get<User[]>('/users') : of<User[]>([])
     }).subscribe({
-      next: ({ datasets, experiments }) => {
+      next: ({ datasets, experiments, users }) => {
         this.datasets.set(datasets);
-        this.experiments.set(experiments.content);
+        this.experiments.set(experiments);
+        this.users.set(users);
       },
       error: (err) => this.error.set(formatApiError(err))
     });
@@ -292,12 +356,12 @@ export class ExperimentsPageComponent {
 
   private loadExperiments(): void {
     this.api
-      .get<PageResponse<Experiment>>('/experiments', {
-        size: 20,
-        status: this.statusFilter() || undefined
+      .get<Experiment[]>('/experiments', {
+        status: this.statusFilter() || undefined,
+        userId: this.auth.isAdmin() && this.userFilter() ? Number(this.userFilter()) : undefined
       })
       .subscribe({
-        next: (response) => this.experiments.set(response.content),
+        next: (response) => this.experiments.set(response),
         error: (err) => this.error.set(formatApiError(err))
       });
   }

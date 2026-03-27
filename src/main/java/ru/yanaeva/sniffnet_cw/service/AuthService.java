@@ -62,7 +62,6 @@ public class AuthService {
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(role);
-        user.setActive(true);
         userRepository.save(user);
 
         return buildAuthResponse(user);
@@ -77,6 +76,7 @@ public class AuthService {
         return buildAuthResponse(user);
     }
 
+    @Transactional(readOnly = true)
     public CurrentUserResponse me(AppUserPrincipal principal) {
         AppUser user = userRepository.findById(principal.getId())
             .orElseThrow(() -> new NotFoundException("User not found"));

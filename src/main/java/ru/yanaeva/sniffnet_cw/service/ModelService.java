@@ -1,13 +1,11 @@
 package ru.yanaeva.sniffnet_cw.service;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import java.util.Comparator;
+import java.util.List;
 import org.springframework.stereotype.Service;
-import ru.yanaeva.sniffnet_cw.dto.common.PageResponse;
 import ru.yanaeva.sniffnet_cw.dto.model.MetricResponse;
 import ru.yanaeva.sniffnet_cw.dto.model.ModelResponse;
+import ru.yanaeva.sniffnet_cw.entity.AppUser;
 import ru.yanaeva.sniffnet_cw.entity.Metric;
 import ru.yanaeva.sniffnet_cw.entity.ModelEntity;
 import ru.yanaeva.sniffnet_cw.exception.NotFoundException;
@@ -19,34 +17,56 @@ public class ModelService {
 
     private final ModelRepository modelRepository;
     private final MetricRepository metricRepository;
+    private final TrainingSyncService trainingSyncService;
     private final MapperService mapperService;
 
     public ModelService(
         ModelRepository modelRepository,
         MetricRepository metricRepository,
+        TrainingSyncService trainingSyncService,
         MapperService mapperService
     ) {
         this.modelRepository = modelRepository;
         this.metricRepository = metricRepository;
+        this.trainingSyncService = trainingSyncService;
         this.mapperService = mapperService;
     }
 
-    public PageResponse<ModelResponse> getModels(Long datasetId, int page, int size, String sort) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
-        Page<ModelEntity> modelPage = datasetId == null ? modelRepository.findAll(pageable)
-        : modelRepository.findByDatasetId(datasetId, pageable);
-        return PageResponse.from(modelPage
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<ModelResponse> getModels(
+        Long datasetId,
+        AppUser currentUser,
+        boolean admin
+    ) {
+        trainingSyncService.syncPendingExperiments();
+        List<ModelEntity> models;
+        if (admin) {
+            models = datasetId == null ? modelRepository.findAll()
+                : modelRepository.findByDatasetId(datasetId);
+        } else {
+            models = datasetId == null
+                ? modelRepository.findByExperimentUserId(currentUser.getId())
+                : modelRepository.findByDatasetIdAndExperimentUserId(
+                    datasetId,
+                    currentUser.getId()
+                );
+        }
+        return models.stream()
+            .sorted(Comparator.comparing(ModelEntity::getCreatedAt).reversed())
             .map(model -> mapperService.toModelResponse(
                 model,
                 metricRepository.findTopByDatasetIdAndConfigIdOrderByIdDesc(
                     model.getDataset().getId(),
                     model.getConfig().getId()
                 ).orElse(null)
-            )));
+            ))
+            .toList();
     }
 
-    public ModelResponse getModel(Long id) {
-        ModelEntity model = getEntity(id);
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ModelResponse getModel(Long id, AppUser currentUser, boolean admin) {
+        ModelEntity model = getAccessibleEntity(id, currentUser, admin);
+        trainingSyncService.syncExperiment(model.getExperiment());
         return mapperService.toModelResponse(
             model,
             metricRepository.findTopByDatasetIdAndConfigIdOrderByIdDesc(
@@ -56,8 +76,10 @@ public class ModelService {
         );
     }
 
-    public MetricResponse getMetrics(Long modelId) {
-        ModelEntity model = getEntity(modelId);
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public MetricResponse getMetrics(Long modelId, AppUser currentUser, boolean admin) {
+        ModelEntity model = getAccessibleEntity(modelId, currentUser, admin);
+        trainingSyncService.syncExperiment(model.getExperiment());
         Metric metric = metricRepository.findTopByDatasetIdAndConfigIdOrderByIdDesc(
                 model.getDataset().getId(),
                 model.getConfig().getId()
@@ -69,5 +91,13 @@ public class ModelService {
     public ModelEntity getEntity(Long id) {
         return modelRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Model not found"));
+    }
+
+    public ModelEntity getAccessibleEntity(Long id, AppUser currentUser, boolean admin) {
+        ModelEntity model = getEntity(id);
+        if (!admin && !model.getExperiment().getUser().getId().equals(currentUser.getId())) {
+            throw new NotFoundException("Model not found");
+        }
+        return model;
     }
 }

@@ -45,7 +45,6 @@ public class DataSeeder implements CommandLineRunner {
             admin.setEmail("admin@sniffnet.local");
             admin.setPassword(passwordEncoder.encode("admin123"));
             admin.setRole(adminRole);
-            admin.setActive(true);
             userRepository.save(admin);
         }
 
@@ -55,12 +54,10 @@ public class DataSeeder implements CommandLineRunner {
             demo.setEmail("demo@sniffnet.local");
             demo.setPassword(passwordEncoder.encode("demo123"));
             demo.setRole(userRole);
-            demo.setActive(true);
             userRepository.save(demo);
         }
 
-        seedDataset("Freshness Fruits", 2, "kaggle://freshness-fruits");
-        seedDataset("Vegetable Shelf Life", 3, "mock://vegetable-shelf-life");
+        seedDataset("Products Dataset", 2, "kaggle://bloodlaac/products-dataset");
     }
 
     private Role createRole(RoleCode code, String name) {

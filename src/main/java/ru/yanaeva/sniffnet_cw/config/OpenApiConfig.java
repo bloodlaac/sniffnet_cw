@@ -18,7 +18,7 @@ public class OpenApiConfig {
         .info(new Info()
         .title("SniffNet API")
         .version("1.0.0")
-        .description("REST API for SniffNet coursework backend"))
+        .description("REST API for SniffNet backend"))
         .addSecurityItem(new SecurityRequirement().addList(schemeName))
         .schemaRequirement(schemeName, new SecurityScheme()
         .name(schemeName)

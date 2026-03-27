@@ -3,7 +3,8 @@ import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { catchError, forkJoin, map, of } from 'rxjs';
 import { ApiService } from '../core/api.service';
-import { Classification, PageResponse } from '../core/api.models';
+import { AuthService } from '../core/auth.service';
+import { Classification, User } from '../core/api.models';
 import { formatApiError } from '../core/api.utils';
 
 @Component({
@@ -23,6 +24,17 @@ import { formatApiError } from '../core/api.utils';
         </div>
 
         <form class="history-filter" [formGroup]="filterForm" (ngSubmit)="load()">
+          @if (auth.isAdmin()) {
+            <label>
+              Пользователь
+              <select formControlName="userId">
+                <option value="">Все</option>
+                @for (user of users(); track user.id) {
+                  <option [value]="user.id">{{ user.username }}</option>
+                }
+              </select>
+            </label>
+          }
           <label>
             От
             <input type="date" formControlName="from" />
@@ -51,10 +63,10 @@ import { formatApiError } from '../core/api.utils';
               <div class="confidence-line">
                 <span>Уверенность</span>
                 <strong>
-                  @if (item.confidence) {
+                  @if (item.confidence !== null && item.confidence !== undefined) {
                     {{ item.confidence | number: '1.2-2' }}
                   } @else {
-                    n/a
+                    значение отсутствует
                   }
                 </strong>
               </div>
@@ -140,18 +152,27 @@ import { formatApiError } from '../core/api.utils';
 })
 export class HistoryPageComponent implements OnDestroy {
   readonly api = inject(ApiService);
+  readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
 
   readonly history = signal<Classification[]>([]);
+  readonly users = signal<User[]>([]);
   readonly imageUrls = signal<Record<number, string>>({});
   readonly error = signal('');
 
   readonly filterForm = this.fb.nonNullable.group({
+    userId: [''],
     from: [''],
     to: ['']
   });
 
   constructor() {
+    if (this.auth.isAdmin()) {
+      this.api.get<User[]>('/users').subscribe({
+        next: (response) => this.users.set(response),
+        error: (err) => this.error.set(formatApiError(err))
+      });
+    }
     this.load();
   }
 
@@ -162,15 +183,15 @@ export class HistoryPageComponent implements OnDestroy {
   load(): void {
     const value = this.filterForm.getRawValue();
     this.api
-      .get<PageResponse<Classification>>('/classifications', {
-        size: 24,
+      .get<Classification[]>('/classifications', {
+        userId: this.auth.isAdmin() && value.userId ? Number(value.userId) : undefined,
         from: value.from || undefined,
         to: value.to || undefined
       })
       .subscribe({
         next: (response) => {
-          this.history.set(response.content);
-          this.loadImages(response.content);
+          this.history.set(response);
+          this.loadImages(response);
         },
         error: (err) => this.error.set(formatApiError(err))
       });

@@ -1,8 +1,7 @@
 import { CommonModule, DecimalPipe, KeyValuePipe } from '@angular/common';
 import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
-import { catchError, of } from 'rxjs';
 import { ApiService } from '../core/api.service';
-import { Classification, Dataset, Model, PageResponse } from '../core/api.models';
+import { Classification, Dataset, Model } from '../core/api.models';
 import { formatApiError } from '../core/api.utils';
 
 @Component({
@@ -21,10 +20,9 @@ import { formatApiError } from '../core/api.utils';
             <p class="eyebrow">Inference</p>
             <h2>Проверка по фото</h2>
           </div>
-
-          <label class="filter-select">
+          <label class="dataset-filter">
             <span>Датасет</span>
-            <select [value]="datasetFilter()" (change)="selectDataset($any($event.target).value)">
+            <select [value]="datasetFilter()" (change)="changeDataset($any($event.target).value)">
               <option value="">Все</option>
               @for (dataset of datasets(); track dataset.id) {
                 <option [value]="dataset.id">{{ dataset.name }}</option>
@@ -48,10 +46,10 @@ import { formatApiError } from '../core/api.utils';
               <div class="metric-line">
                 <span>Val acc</span>
                 <strong>
-                  @if (model.metrics?.validationAccuracy) {
+                  @if (model.metrics?.validationAccuracy !== null && model.metrics?.validationAccuracy !== undefined) {
                     {{ model.metrics?.validationAccuracy | number: '1.2-2' }}
                   } @else {
-                    n/a
+                    метрики отсутствуют
                   }
                 </strong>
               </div>
@@ -78,20 +76,20 @@ import { formatApiError } from '../core/api.utils';
               <div>
                 <span>Точность</span>
                 <strong>
-                  @if (model.metrics?.validationAccuracy) {
+                  @if (model.metrics?.validationAccuracy !== null && model.metrics?.validationAccuracy !== undefined) {
                     {{ model.metrics?.validationAccuracy | number: '1.2-2' }}
                   } @else {
-                    n/a
+                    метрики отсутствуют
                   }
                 </strong>
               </div>
               <div>
                 <span>Потери</span>
                 <strong>
-                  @if (model.metrics?.validationLoss) {
+                  @if (model.metrics?.validationLoss !== null && model.metrics?.validationLoss !== undefined) {
                     {{ model.metrics?.validationLoss | number: '1.2-2' }}
                   } @else {
-                    n/a
+                    метрики отсутствуют
                   }
                 </strong>
               </div>
@@ -103,7 +101,7 @@ import { formatApiError } from '../core/api.utils';
           </div>
         }
 
-        <form class="form-grid" (ngSubmit)="submit()">
+        <form class="form-grid" (submit)="$event.preventDefault(); submit()">
           @if (!previewUrl()) {
             <label class="upload-box">
               <input type="file" accept=".jpg,.jpeg,.png,image/png,image/jpeg" (change)="handleFile($event)" />
@@ -148,10 +146,10 @@ import { formatApiError } from '../core/api.utils';
                 <h3>{{ item.predictedClass || 'Нет класса' }}</h3>
               </div>
               <strong>
-                @if (item.confidence) {
+                @if (item.confidence !== null && item.confidence !== undefined) {
                   {{ item.confidence | number: '1.2-2' }}
                 } @else {
-                  n/a
+                  значение отсутствует
                 }
               </strong>
             </div>
@@ -165,9 +163,6 @@ import { formatApiError } from '../core/api.utils';
               }
             </div>
 
-            @if (resultImageUrl()) {
-              <img class="result-image" [src]="resultImageUrl()" alt="uploaded image" />
-            }
           </div>
         }
       </article>
@@ -401,11 +396,10 @@ export class ClassificationPageComponent implements OnDestroy {
 
   readonly datasets = signal<Dataset[]>([]);
   readonly models = signal<Model[]>([]);
-  readonly datasetFilter = signal('');
   readonly selectedModelId = signal<number | null>(null);
+  readonly datasetFilter = signal('');
   readonly previewUrl = signal('');
   readonly selectedFileName = signal('');
-  readonly resultImageUrl = signal('');
   readonly submitting = signal(false);
   readonly error = signal('');
   readonly result = signal<Classification | null>(null);
@@ -419,16 +413,15 @@ export class ClassificationPageComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.revokeUrl(this.previewUrl());
-    this.revokeUrl(this.resultImageUrl());
-  }
-
-  selectDataset(value: string): void {
-    this.datasetFilter.set(value);
-    this.loadModels(value ? Number(value) : undefined);
   }
 
   pickModel(modelId: number): void {
     this.selectedModelId.set(modelId);
+  }
+
+  changeDataset(value: string): void {
+    this.datasetFilter.set(value);
+    this.loadModels();
   }
 
   handleFile(event: Event): void {
@@ -462,7 +455,6 @@ export class ClassificationPageComponent implements OnDestroy {
       next: (response) => {
         this.submitting.set(false);
         this.result.set(response);
-        this.loadResultImage(response.imageId);
       },
       error: (err) => {
         this.submitting.set(false);
@@ -471,17 +463,12 @@ export class ClassificationPageComponent implements OnDestroy {
     });
   }
 
-  private loadDatasets(): void {
-    this.api.get<Dataset[]>('/datasets').subscribe({
-      next: (response) => this.datasets.set(response),
-      error: (err) => this.error.set(formatApiError(err))
-    });
-  }
-
-  private loadModels(datasetId?: number): void {
-    this.api.get<PageResponse<Model>>('/models', { size: 20, datasetId }).subscribe({
+  private loadModels(): void {
+    this.api.get<Model[]>('/models', {
+      datasetId: this.datasetFilter() ? Number(this.datasetFilter()) : undefined
+    }).subscribe({
       next: (response) => {
-        const models = response.content.filter((item) => item.availableForInference);
+        const models = response.filter((item) => item.availableForInference);
         this.models.set(models);
 
         if (!models.some((item) => item.id === this.selectedModelId())) {
@@ -492,23 +479,17 @@ export class ClassificationPageComponent implements OnDestroy {
     });
   }
 
+  private loadDatasets(): void {
+    this.api.get<Dataset[]>('/datasets').subscribe({
+      next: (response) => this.datasets.set(response),
+      error: (err) => this.error.set(formatApiError(err))
+    });
+  }
+
   private setPreviewUrl(nextUrl: string): void {
     const currentUrl = this.previewUrl();
     this.revokeUrl(currentUrl);
     this.previewUrl.set(nextUrl);
-  }
-
-  private loadResultImage(imageId: number): void {
-    this.revokeUrl(this.resultImageUrl());
-    this.resultImageUrl.set('');
-
-    this.api.getBlob(`/files/images/${imageId}/content`).pipe(
-      catchError(() => of(null))
-    ).subscribe((blob) => {
-      if (blob) {
-        this.resultImageUrl.set(URL.createObjectURL(blob));
-      }
-    });
   }
 
   private revokeUrl(url: string): void {

@@ -1,8 +1,10 @@
 package ru.yanaeva.sniffnet_cw.controller;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,11 +14,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import ru.yanaeva.sniffnet_cw.dto.common.PageResponse;
 import ru.yanaeva.sniffnet_cw.dto.experiment.ExperimentCreateRequest;
 import ru.yanaeva.sniffnet_cw.dto.experiment.ExperimentResponse;
 import ru.yanaeva.sniffnet_cw.dto.experiment.ExperimentStatusUpdateRequest;
-import ru.yanaeva.sniffnet_cw.entity.AppUser;
 import ru.yanaeva.sniffnet_cw.entity.ExperimentStatus;
 import ru.yanaeva.sniffnet_cw.security.AppUserPrincipal;
 import ru.yanaeva.sniffnet_cw.service.ExperimentService;
@@ -44,22 +44,16 @@ public class ExperimentController {
     }
 
     @GetMapping
-    public PageResponse<ExperimentResponse> getAll(
+    public List<ExperimentResponse> getAll(
         @RequestParam(required = false) Long userId,
         @RequestParam(required = false) String status,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(defaultValue = "startTime") String sort,
         @AuthenticationPrincipal AppUserPrincipal principal
     ) {
         return experimentService.getExperiments(
             userId,
             status,
             principal.getUser(),
-            isAdmin(principal),
-            page,
-            size,
-            sort
+            isAdmin(principal)
         );
     }
 
@@ -86,6 +80,13 @@ public class ExperimentController {
         @Valid @RequestBody ExperimentStatusUpdateRequest request
     ) {
         return experimentService.updateStatus(id, ExperimentStatus.valueOf(request.status()));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        experimentService.deleteExperiment(id);
     }
 
     private boolean isAdmin(AppUserPrincipal principal) {

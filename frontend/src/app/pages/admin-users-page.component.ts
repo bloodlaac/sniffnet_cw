@@ -2,7 +2,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../core/api.service';
-import { PageResponse, User } from '../core/api.models';
+import { User } from '../core/api.models';
 import { formatApiError } from '../core/api.utils';
 
 @Component({
@@ -66,11 +66,6 @@ import { formatApiError } from '../core/api.utils';
                 <option value="ROLE_USER">ROLE_USER</option>
                 <option value="ROLE_ADMIN">ROLE_ADMIN</option>
               </select>
-            </label>
-
-            <label class="checkbox-row">
-              <input type="checkbox" formControlName="active" />
-              <span>Аккаунт активен</span>
             </label>
 
             <button type="submit" class="primary-button">Сохранить</button>
@@ -137,12 +132,6 @@ import { formatApiError } from '../core/api.utils';
       font-size: 0.88rem;
     }
 
-    .checkbox-row {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
     .empty-state {
       color: var(--color-text-muted);
       margin: 1rem 0 0;
@@ -167,8 +156,7 @@ export class AdminUsersPageComponent {
   readonly form = this.fb.nonNullable.group({
     username: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
-    role: ['ROLE_USER', [Validators.required]],
-    active: [true]
+    role: ['ROLE_USER', [Validators.required]]
   });
 
   constructor() {
@@ -180,8 +168,7 @@ export class AdminUsersPageComponent {
     this.form.patchValue({
       username: user.username,
       email: user.email,
-      role: user.role,
-      active: user.active
+      role: user.role
     });
   }
 
@@ -217,8 +204,8 @@ export class AdminUsersPageComponent {
   }
 
   load(): void {
-    this.api.get<PageResponse<User>>('/users', { size: 30, search: this.search() || undefined }).subscribe({
-      next: (response) => this.users.set(response.content),
+    this.api.get<User[]>('/users', { search: this.search() || undefined }).subscribe({
+      next: (response) => this.users.set(response),
       error: (err) => this.error.set(formatApiError(err))
     });
   }

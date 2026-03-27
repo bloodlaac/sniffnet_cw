@@ -7,7 +7,6 @@ public record CurrentUserResponse(
         String username,
         String email,
         String role,
-        Boolean active,
         LocalDateTime createdAt
 ) {
 }

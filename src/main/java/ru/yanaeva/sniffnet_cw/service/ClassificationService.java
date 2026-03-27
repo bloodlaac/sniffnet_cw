@@ -2,15 +2,12 @@ package ru.yanaeva.sniffnet_cw.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import java.util.Comparator;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.yanaeva.sniffnet_cw.dto.classification.ClassificationResponse;
-import ru.yanaeva.sniffnet_cw.dto.common.PageResponse;
 import ru.yanaeva.sniffnet_cw.dto.file.UploadedImageResponse;
 import ru.yanaeva.sniffnet_cw.entity.AppUser;
 import ru.yanaeva.sniffnet_cw.entity.ClassificationRequest;
@@ -31,6 +28,7 @@ public class ClassificationService {
     private final ModelService modelService;
     private final StorageService storageService;
     private final ClassificationAdapter classificationAdapter;
+    private final TrainingSyncService trainingSyncService;
     private final MapperService mapperService;
 
     public ClassificationService(
@@ -38,12 +36,14 @@ public class ClassificationService {
         ModelService modelService,
         StorageService storageService,
         ClassificationAdapter classificationAdapter,
+        TrainingSyncService trainingSyncService,
         MapperService mapperService
     ) {
         this.classificationRequestRepository = classificationRequestRepository;
         this.modelService = modelService;
         this.storageService = storageService;
         this.classificationAdapter = classificationAdapter;
+        this.trainingSyncService = trainingSyncService;
         this.mapperService = mapperService;
     }
 
@@ -54,9 +54,13 @@ public class ClassificationService {
         MultipartFile file,
         AppUser user
     ) {
-        ModelEntity model = modelService.getEntity(modelId);
+        ModelEntity model = modelService.getAccessibleEntity(modelId, user, false);
+        trainingSyncService.syncExperiment(model.getExperiment());
         if (!Boolean.TRUE.equals(model.getAvailableForInference())) {
             throw new BadRequestException("Model is not available for inference");
+        }
+        if (model.getExternalModelId() == null) {
+            throw new BadRequestException("Model is not synchronized with Python service yet");
         }
 
         UploadedImage image = resolveImage(imageId, file, user);
@@ -70,6 +74,7 @@ public class ClassificationService {
         ClassificationResult result = classificationAdapter.classify(
             new ClassificationCommand(
                 model.getId(),
+                model.getExternalModelId(),
                 model.getName(),
                 image.getStoragePath(),
                 image.getContentType()
@@ -88,42 +93,45 @@ public class ClassificationService {
         return mapperService.toClassificationResponse(savedRequest);
     }
 
-    public PageResponse<ClassificationResponse> getClassifications(
+    @Transactional(readOnly = true)
+    public List<ClassificationResponse> getClassifications(
         AppUser currentUser,
         boolean admin,
+        Long userId,
         LocalDate from,
-        LocalDate to,
-        int page,
-        int size,
-        String sort
+        LocalDate to
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sort).descending());
         LocalDateTime fromDateTime = from == null ? null : from.atStartOfDay();
         LocalDateTime toDateTime = to == null ? null : to.plusDays(1).atStartOfDay();
+        Long effectiveUserId = admin ? userId : currentUser.getId();
 
-        Page<ClassificationRequest> requestPage;
-        if (admin && fromDateTime != null && toDateTime != null) {
-            requestPage = classificationRequestRepository.findByCreatedAtBetween(
+        List<ClassificationRequest> requests;
+        if (effectiveUserId != null && fromDateTime != null && toDateTime != null) {
+            requests = classificationRequestRepository.findByUserIdAndCreatedAtBetween(
+                effectiveUserId,
                 fromDateTime,
-                toDateTime,
-                pageable
+                toDateTime
             );
-        } else if (!admin && fromDateTime != null && toDateTime != null) {
-            requestPage = classificationRequestRepository.findByUserIdAndCreatedAtBetween(
-                currentUser.getId(),
+        } else if (admin && fromDateTime != null && toDateTime != null) {
+            requests = classificationRequestRepository.findByCreatedAtBetween(
                 fromDateTime,
-                toDateTime,
-                pageable
+                toDateTime
             );
+        } else if (effectiveUserId != null) {
+            requests = classificationRequestRepository.findByUserId(effectiveUserId);
         } else if (admin) {
-            requestPage = classificationRequestRepository.findAll(pageable);
+            requests = classificationRequestRepository.findAll();
         } else {
-            requestPage = classificationRequestRepository.findByUserId(currentUser.getId(), pageable);
+            requests = classificationRequestRepository.findByUserId(currentUser.getId());
         }
 
-        return PageResponse.from(requestPage.map(this::toClassificationResponse));
+        return requests.stream()
+            .sorted(Comparator.comparing(ClassificationRequest::getCreatedAt).reversed())
+            .map(this::toClassificationResponse)
+            .toList();
     }
 
+    @Transactional(readOnly = true)
     public ClassificationResponse getClassification(Long id, AppUser currentUser, boolean admin) {
         ClassificationRequest request = classificationRequestRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Classification request not found"));

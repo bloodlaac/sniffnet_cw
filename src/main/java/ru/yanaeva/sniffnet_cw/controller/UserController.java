@@ -1,6 +1,7 @@
 package ru.yanaeva.sniffnet_cw.controller;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import ru.yanaeva.sniffnet_cw.dto.common.PageResponse;
 import ru.yanaeva.sniffnet_cw.dto.user.UserResponse;
 import ru.yanaeva.sniffnet_cw.dto.user.UserUpdateRequest;
 import ru.yanaeva.sniffnet_cw.service.UserService;
@@ -27,13 +27,10 @@ public class UserController {
     }
 
     @GetMapping
-    public PageResponse<UserResponse> getUsers(
-        @RequestParam(required = false) String search,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(defaultValue = "createdAt") String sort
+    public List<UserResponse> getUsers(
+        @RequestParam(required = false) String search
     ) {
-        return userService.getUsers(search, page, size, sort);
+        return userService.getUsers(search);
     }
 
     @GetMapping("/{id}")

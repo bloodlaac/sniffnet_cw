@@ -1,6 +1,7 @@
 package ru.yanaeva.sniffnet_cw.controller;
 
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.yanaeva.sniffnet_cw.dto.classification.ClassificationResponse;
-import ru.yanaeva.sniffnet_cw.dto.common.PageResponse;
 import ru.yanaeva.sniffnet_cw.security.AppUserPrincipal;
 import ru.yanaeva.sniffnet_cw.service.ClassificationService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -39,22 +39,18 @@ public class ClassificationController {
     }
 
     @GetMapping
-    public PageResponse<ClassificationResponse> getAll(
+    public List<ClassificationResponse> getAll(
+        @RequestParam(required = false) Long userId,
         @RequestParam(required = false) LocalDate from,
         @RequestParam(required = false) LocalDate to,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(defaultValue = "createdAt") String sort,
         @AuthenticationPrincipal AppUserPrincipal principal
     ) {
         return classificationService.getClassifications(
             principal.getUser(),
             "ROLE_ADMIN".equals(principal.getRoleCode()),
+            userId,
             from,
-            to,
-            page,
-            size,
-            sort
+            to
         );
     }
 

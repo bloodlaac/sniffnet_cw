@@ -38,7 +38,6 @@ public class MapperService {
             user.getUsername(),
             user.getEmail(),
             user.getRole().getCode().name(),
-            user.getActive(),
             user.getCreatedAt()
         );
     }
@@ -49,7 +48,6 @@ public class MapperService {
             user.getUsername(),
             user.getEmail(),
             user.getRole().getCode().name(),
-            user.getActive(),
             user.getCreatedAt()
         );
     }
@@ -102,6 +100,8 @@ public class MapperService {
             model.getParamsNum(),
             model.getTrainingTimeSeconds(),
             model.getAvailableForInference(),
+            model.getWeightsPath(),
+            model.getCreatedAt(),
             toMetricResponse(metric)
         );
     }
@@ -118,6 +118,7 @@ public class MapperService {
             experiment.getStartTime(),
             experiment.getEndTime(),
             experiment.getReportPath(),
+            experiment.getErrorMessage(),
             experiment.getDataset().getId(),
             experiment.getDataset().getName(),
             experiment.getUser().getId(),

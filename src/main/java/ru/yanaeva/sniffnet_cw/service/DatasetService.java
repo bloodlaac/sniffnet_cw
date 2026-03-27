@@ -1,5 +1,6 @@
 package ru.yanaeva.sniffnet_cw.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import ru.yanaeva.sniffnet_cw.dto.dataset.DatasetResponse;
@@ -18,10 +19,12 @@ public class DatasetService {
         this.mapperService = mapperService;
     }
 
+    @Transactional(readOnly = true)
     public List<DatasetResponse> getAll() {
         return datasetRepository.findAll().stream().map(mapperService::toDatasetResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public DatasetResponse getById(Long id) {
         return mapperService.toDatasetResponse(getEntity(id));
     }

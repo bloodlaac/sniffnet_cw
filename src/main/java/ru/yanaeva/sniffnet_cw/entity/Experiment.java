@@ -46,6 +46,12 @@ public class Experiment {
     @Column(length = 255)
     private String reportPath;
 
+    @Column(length = 255)
+    private String errorMessage;
+
+    @Column(unique = true)
+    private Long externalExperimentId;
+
     @PrePersist
     public void prePersist() {
         startTime = LocalDateTime.now();
@@ -105,5 +111,21 @@ public class Experiment {
 
     public void setReportPath(String reportPath) {
         this.reportPath = reportPath;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public Long getExternalExperimentId() {
+        return externalExperimentId;
+    }
+
+    public void setExternalExperimentId(Long externalExperimentId) {
+        this.externalExperimentId = externalExperimentId;
     }
 }

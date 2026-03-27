@@ -66,10 +66,12 @@ public class StorageService {
         }
     }
 
+    @Transactional(readOnly = true)
     public UploadedImageResponse getMetadata(Long id) {
         return mapperService.toUploadedImageResponse(getEntity(id));
     }
 
+    @Transactional(readOnly = true)
     public UploadedImageResponse getMetadata(Long id, AppUser currentUser, boolean admin) {
         UploadedImage image = getEntity(id);
         if (!admin && !image.getUser().getId().equals(currentUser.getId())) {
@@ -78,6 +80,7 @@ public class StorageService {
         return mapperService.toUploadedImageResponse(image);
     }
 
+    @Transactional(readOnly = true)
     public Resource loadFile(Long id, AppUser currentUser, boolean admin) {
         UploadedImage image = getEntity(id);
         if (!admin && !image.getUser().getId().equals(currentUser.getId())) {

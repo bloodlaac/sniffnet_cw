@@ -11,6 +11,7 @@ public record ExperimentResponse(
         LocalDateTime startTime,
         LocalDateTime endTime,
         String reportPath,
+        String errorMessage,
         Long datasetId,
         String datasetName,
         Long userId,

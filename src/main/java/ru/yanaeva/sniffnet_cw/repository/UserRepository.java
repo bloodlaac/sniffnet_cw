@@ -1,8 +1,7 @@
 package ru.yanaeva.sniffnet_cw.repository;
 
 import java.util.Optional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import ru.yanaeva.sniffnet_cw.entity.AppUser;
 
@@ -13,5 +12,5 @@ public interface UserRepository extends JpaRepository<AppUser, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
 
-    Page<AppUser> findByUsernameContainingIgnoreCase(String username, Pageable pageable);
+    List<AppUser> findByUsernameContainingIgnoreCase(String username);
 }

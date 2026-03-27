@@ -11,25 +11,5 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  backend:
-    image: eclipse-temurin:17-jre
-    container_name: sniffnet_cw_backend
-    working_dir: /app
-    command: ["java", "-jar", "app.jar"]
-    environment:
-      DB_URL: jdbc:postgresql://postgres:5432/sniff_cw_db
-      DB_USERNAME: bloodlaac
-      DB_PASSWORD: 1
-      JWT_SECRET: 0123456789012345678901234567890123456789012345678901234567890123
-      MOCK_INTEGRATION_ENABLED: "true"
-    depends_on:
-      - postgres
-    ports:
-      - "8080:8080"
-    volumes:
-      - ../target:/app
-      - ../storage:/app/storage
-
 volumes:
   postgres_data:
-  

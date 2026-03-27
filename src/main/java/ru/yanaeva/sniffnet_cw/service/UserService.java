@@ -1,11 +1,9 @@
 package ru.yanaeva.sniffnet_cw.service;
 
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import java.util.Comparator;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yanaeva.sniffnet_cw.dto.common.PageResponse;
 import ru.yanaeva.sniffnet_cw.dto.user.UserResponse;
 import ru.yanaeva.sniffnet_cw.dto.user.UserUpdateRequest;
 import ru.yanaeva.sniffnet_cw.entity.AppUser;
@@ -33,12 +31,14 @@ public class UserService {
         this.mapperService = mapperService;
     }
 
-    public PageResponse<UserResponse> getUsers(String search, int page, int size, String sort) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
-        return PageResponse.from((search == null || search.isBlank()
-            ? userRepository.findAll(pageable)
-            : userRepository.findByUsernameContainingIgnoreCase(search, pageable))
-            .map(mapperService::toUserResponse));
+    public List<UserResponse> getUsers(String search) {
+        return (search == null || search.isBlank()
+            ? userRepository.findAll()
+            : userRepository.findByUsernameContainingIgnoreCase(search))
+            .stream()
+            .sorted(Comparator.comparing(AppUser::getCreatedAt).reversed())
+            .map(mapperService::toUserResponse)
+            .toList();
     }
 
     public UserResponse getUser(Long id) {
@@ -65,7 +65,6 @@ public class UserService {
         user.setUsername(request.username());
         user.setEmail(request.email());
         user.setRole(role);
-        user.setActive(request.active());
         return mapperService.toUserResponse(userRepository.save(user));
     }
 

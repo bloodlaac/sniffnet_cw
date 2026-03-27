@@ -40,6 +40,11 @@ export const routes: Routes = [
           import('./pages/history-page.component').then((m) => m.HistoryPageComponent)
       },
       {
+        path: 'profile',
+        loadComponent: () =>
+          import('./pages/profile-page.component').then((m) => m.ProfilePageComponent)
+      },
+      {
         path: 'admin/users',
         canActivate: [adminGuard],
         loadComponent: () =>

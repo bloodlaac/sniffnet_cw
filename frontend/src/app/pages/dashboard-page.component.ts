@@ -3,7 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../core/api.service';
-import { Classification, Dataset, Experiment, Model, PageResponse } from '../core/api.models';
+import { Classification, Dataset, Experiment, Model } from '../core/api.models';
 import { formatApiError } from '../core/api.utils';
 
 @Component({
@@ -23,17 +23,17 @@ import { formatApiError } from '../core/api.utils';
       </article>
       <article class="card stat-card">
         <p>Модели</p>
-        <strong>{{ models().length }}</strong>
+        <strong>{{ totalModels() }}</strong>
         <span>Готовы к инференсу</span>
       </article>
       <article class="card stat-card">
         <p>Эксперименты</p>
-        <strong>{{ experiments().length }}</strong>
+        <strong>{{ totalExperiments() }}</strong>
         <span>Последние запуски обучения</span>
       </article>
       <article class="card stat-card">
         <p>Классификации</p>
-        <strong>{{ history().length }}</strong>
+        <strong>{{ totalHistory() }}</strong>
         <span>Последние обращения к сервису</span>
       </article>
     </section>
@@ -102,10 +102,10 @@ import { formatApiError } from '../core/api.utils';
                 <p>{{ model.datasetName }}</p>
               </div>
               <span>
-                @if (model.metrics?.validationAccuracy) {
+                @if (model.metrics?.validationAccuracy !== null && model.metrics?.validationAccuracy !== undefined) {
                   {{ model.metrics?.validationAccuracy | number: '1.2-2' }}
                 } @else {
-                  n/a
+                  метрики отсутствуют
                 }
               </span>
             </div>
@@ -130,10 +130,10 @@ import { formatApiError } from '../core/api.utils';
                 <p>{{ item.modelName }}</p>
               </div>
               <span>
-                @if (item.confidence) {
+                @if (item.confidence !== null && item.confidence !== undefined) {
                   {{ item.confidence | number: '1.2-2' }}
                 } @else {
-                  n/a
+                  значение отсутствует
                 }
               </span>
             </div>
@@ -262,6 +262,9 @@ export class DashboardPageComponent {
   readonly models = signal<Model[]>([]);
   readonly experiments = signal<Experiment[]>([]);
   readonly history = signal<Classification[]>([]);
+  readonly totalModels = signal(0);
+  readonly totalExperiments = signal(0);
+  readonly totalHistory = signal(0);
   readonly error = signal('');
 
   constructor() {
@@ -271,15 +274,19 @@ export class DashboardPageComponent {
   private load(): void {
     forkJoin({
       datasets: this.api.get<Dataset[]>('/datasets'),
-      models: this.api.get<PageResponse<Model>>('/models', { size: 4 }),
-      experiments: this.api.get<PageResponse<Experiment>>('/experiments', { size: 4 }),
-      history: this.api.get<PageResponse<Classification>>('/classifications', { size: 4 })
+      models: this.api.get<Model[]>('/models'),
+      experiments: this.api.get<Experiment[]>('/experiments'),
+      history: this.api.get<Classification[]>('/classifications')
     }).subscribe({
       next: ({ datasets, models, experiments, history }) => {
+        const readyModels = models.filter((model) => model.availableForInference);
         this.datasets.set(datasets);
-        this.models.set(models.content);
-        this.experiments.set(experiments.content);
-        this.history.set(history.content);
+        this.models.set(readyModels);
+        this.experiments.set(experiments);
+        this.history.set(history);
+        this.totalModels.set(readyModels.length);
+        this.totalExperiments.set(experiments.length);
+        this.totalHistory.set(history.length);
       },
       error: (err) => this.error.set(formatApiError(err))
     });

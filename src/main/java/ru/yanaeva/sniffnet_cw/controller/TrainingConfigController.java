@@ -1,6 +1,7 @@
 package ru.yanaeva.sniffnet_cw.controller;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,11 @@ public class TrainingConfigController {
 
     public TrainingConfigController(TrainingConfigService trainingConfigService) {
         this.trainingConfigService = trainingConfigService;
+    }
+
+    @GetMapping
+    public List<TrainingConfigResponse> getAll() {
+        return trainingConfigService.getAll();
     }
 
     @PostMapping

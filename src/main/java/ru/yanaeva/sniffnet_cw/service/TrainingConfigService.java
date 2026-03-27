@@ -1,5 +1,6 @@
 package ru.yanaeva.sniffnet_cw.service;
 
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yanaeva.sniffnet_cw.dto.config.TrainingConfigRequest;
@@ -36,6 +37,12 @@ public class TrainingConfigService {
 
     public TrainingConfigResponse getById(Long id) {
         return mapperService.toTrainingConfigResponse(getEntity(id));
+    }
+
+    public List<TrainingConfigResponse> getAll() {
+        return trainingConfigRepository.findAll().stream()
+            .map(mapperService::toTrainingConfigResponse)
+            .toList();
     }
 
     @Transactional

@@ -57,33 +57,66 @@ import { formatApiError } from '../core/api.utils';
         }
 
         @if (mode() === 'login') {
-          <form class="form-grid" [formGroup]="loginForm" (ngSubmit)="submitLogin()">
+          <form class="form-grid" [formGroup]="loginForm" (submit)="$event.preventDefault(); submitLogin()">
             <label>
               Username
               <input type="text" formControlName="username" placeholder="demo" />
             </label>
+            @if (loginForm.controls.username.invalid && loginForm.controls.username.touched) {
+              <div class="field-error">Введите username.</div>
+            }
             <label>
               Пароль
               <input type="password" formControlName="password" placeholder="demo123" />
             </label>
+            @if (loginForm.controls.password.invalid && loginForm.controls.password.touched) {
+              <div class="field-error">Введите пароль.</div>
+            }
             <button type="submit" class="primary-button" [disabled]="submitting()">
               {{ submitting() ? 'Входим...' : 'Войти' }}
             </button>
           </form>
         } @else {
-          <form class="form-grid" [formGroup]="registerForm" (ngSubmit)="submitRegister()">
+          <form class="form-grid" [formGroup]="registerForm" (submit)="$event.preventDefault(); submitRegister()">
             <label>
               Username
               <input type="text" formControlName="username" placeholder="student" />
             </label>
+            @if (registerForm.controls.username.invalid && registerForm.controls.username.touched) {
+              <div class="field-error">
+                @if (registerForm.controls.username.hasError('required')) {
+                  Укажите username.
+                } @else if (registerForm.controls.username.hasError('minlength')) {
+                  Username должен содержать минимум 3 символа.
+                }
+              </div>
+            }
             <label>
               Email
               <input type="email" formControlName="email" placeholder="student@sniffnet.local" />
             </label>
+            @if (registerForm.controls.email.invalid && registerForm.controls.email.touched) {
+              <div class="field-error">
+                @if (registerForm.controls.email.hasError('required')) {
+                  Укажите email.
+                } @else if (registerForm.controls.email.hasError('email')) {
+                  Введите корректный email, например name@example.com.
+                }
+              </div>
+            }
             <label>
               Пароль
               <input type="password" formControlName="password" placeholder="minimum 6 symbols" />
             </label>
+            @if (registerForm.controls.password.invalid && registerForm.controls.password.touched) {
+              <div class="field-error">
+                @if (registerForm.controls.password.hasError('required')) {
+                  Укажите пароль.
+                } @else if (registerForm.controls.password.hasError('minlength')) {
+                  Пароль должен содержать минимум 6 символов.
+                }
+              </div>
+            }
             <button type="submit" class="primary-button" [disabled]="submitting()">
               {{ submitting() ? 'Создаем...' : 'Создать аккаунт' }}
             </button>
@@ -212,6 +245,12 @@ import { formatApiError } from '../core/api.utils';
       margin-top: 0.5rem;
       color: var(--color-text-muted);
       font-size: 0.95rem;
+    }
+
+    .field-error {
+      margin-top: -0.5rem;
+      color: var(--color-danger-text);
+      font-size: 0.9rem;
     }
 
     @media (max-width: 960px) {

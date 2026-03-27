@@ -7,7 +7,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -40,7 +39,7 @@ public class Metric {
     @Column(precision = 5, scale = 4)
     private BigDecimal validationLoss;
 
-    @Lob
+    @Column(columnDefinition = "text")
     private String detailsJson;
 
     public Long getId() {

@@ -74,19 +74,11 @@ public class AppProperties {
     }
 
     public static class Integration {
-        private boolean mockEnabled = true;
         @NotBlank
         private String trainingServiceUrl;
         @NotBlank
         private String classificationServiceUrl;
-
-        public boolean isMockEnabled() {
-            return mockEnabled;
-        }
-
-        public void setMockEnabled(boolean mockEnabled) {
-            this.mockEnabled = mockEnabled;
-        }
+        private Duration timeout = Duration.ofSeconds(30);
 
         public String getTrainingServiceUrl() {
             return trainingServiceUrl;
@@ -102,6 +94,14 @@ public class AppProperties {
 
         public void setClassificationServiceUrl(String classificationServiceUrl) {
             this.classificationServiceUrl = classificationServiceUrl;
+        }
+
+        public Duration getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(Duration timeout) {
+            this.timeout = timeout;
         }
     }
 }

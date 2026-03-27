@@ -1,24 +1,26 @@
 package ru.yanaeva.sniffnet_cw.repository;
 
 import java.time.LocalDateTime;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import ru.yanaeva.sniffnet_cw.entity.ClassificationRequest;
 
 public interface ClassificationRequestRepository extends JpaRepository<ClassificationRequest, Long> {
-    Page<ClassificationRequest> findByUserId(Long userId, Pageable pageable);
+    boolean existsByModelId(Long modelId);
+    boolean existsByImageId(Long imageId);
+    List<ClassificationRequest> findByModelId(Long modelId);
+    void deleteByModelId(Long modelId);
 
-    Page<ClassificationRequest> findByUserIdAndCreatedAtBetween(
+    List<ClassificationRequest> findByUserId(Long userId);
+
+    List<ClassificationRequest> findByUserIdAndCreatedAtBetween(
         Long userId,
         LocalDateTime from,
-        LocalDateTime to,
-        Pageable pageable
+        LocalDateTime to
     );
 
-    Page<ClassificationRequest> findByCreatedAtBetween(
+    List<ClassificationRequest> findByCreatedAtBetween(
         LocalDateTime from,
-        LocalDateTime to,
-        Pageable pageable
+        LocalDateTime to
     );
 }

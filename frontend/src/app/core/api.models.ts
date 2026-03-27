@@ -1,11 +1,3 @@
-export interface PageResponse<T> {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-}
-
 export interface ApiErrorResponse {
   timestamp: string;
   status: number;
@@ -28,7 +20,6 @@ export interface CurrentUser {
   username: string;
   email: string;
   role: UserRole;
-  active?: boolean;
   createdAt?: string;
 }
 
@@ -70,6 +61,8 @@ export interface Model {
   paramsNum: number;
   trainingTimeSeconds: number;
   availableForInference: boolean;
+  weightsPath?: string | null;
+  createdAt?: string;
   metrics?: Metric | null;
 }
 
@@ -79,6 +72,7 @@ export interface Experiment {
   startTime: string;
   endTime?: string | null;
   reportPath?: string | null;
+  errorMessage?: string | null;
   datasetId: number;
   datasetName: string;
   userId: number;
@@ -118,7 +112,6 @@ export interface User {
   username: string;
   email: string;
   role: UserRole;
-  active: boolean;
   createdAt: string;
 }
 
