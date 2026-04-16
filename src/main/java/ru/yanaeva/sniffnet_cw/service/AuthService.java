@@ -1,6 +1,8 @@
 package ru.yanaeva.sniffnet_cw.service;
 
+import io.jsonwebtoken.JwtException;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -8,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yanaeva.sniffnet_cw.dto.auth.AuthResponse;
 import ru.yanaeva.sniffnet_cw.dto.auth.CurrentUserResponse;
 import ru.yanaeva.sniffnet_cw.dto.auth.LoginRequest;
+import ru.yanaeva.sniffnet_cw.dto.auth.RefreshTokenRequest;
 import ru.yanaeva.sniffnet_cw.dto.auth.RegisterRequest;
 import ru.yanaeva.sniffnet_cw.entity.AppUser;
 import ru.yanaeva.sniffnet_cw.entity.Role;
@@ -76,6 +79,22 @@ public class AuthService {
         return buildAuthResponse(user);
     }
 
+    public AuthResponse refresh(RefreshTokenRequest request) {
+        try {
+            String username = jwtService.extractUsername(request.refreshToken());
+            AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BadCredentialsException("Invalid refresh token"));
+
+            AppUserPrincipal principal = new AppUserPrincipal(user);
+            if (!jwtService.isRefreshTokenValid(request.refreshToken(), principal)) {
+                throw new BadCredentialsException("Invalid refresh token");
+            }
+            return buildAuthResponse(user);
+        } catch (JwtException ex) {
+            throw new BadCredentialsException("Invalid refresh token", ex);
+        }
+    }
+
     @Transactional(readOnly = true)
     public CurrentUserResponse me(AppUserPrincipal principal) {
         AppUser user = userRepository.findById(principal.getId())
@@ -86,7 +105,8 @@ public class AuthService {
     private AuthResponse buildAuthResponse(AppUser user) {
         AppUserPrincipal principal = new AppUserPrincipal(user);
         return new AuthResponse(
-            jwtService.generateToken(principal),
+            jwtService.generateAccessToken(principal),
+            jwtService.generateRefreshToken(principal),
             user.getId(),
             user.getUsername(),
             user.getEmail(),

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.yanaeva.sniffnet_cw.dto.auth.AuthResponse;
 import ru.yanaeva.sniffnet_cw.dto.auth.CurrentUserResponse;
 import ru.yanaeva.sniffnet_cw.dto.auth.LoginRequest;
+import ru.yanaeva.sniffnet_cw.dto.auth.RefreshTokenRequest;
 import ru.yanaeva.sniffnet_cw.dto.auth.RegisterRequest;
 import ru.yanaeva.sniffnet_cw.security.AppUserPrincipal;
 import ru.yanaeva.sniffnet_cw.service.AuthService;
@@ -34,6 +35,11 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/refresh")
+    public AuthResponse refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        return authService.refresh(request);
     }
 
     @GetMapping("/me")

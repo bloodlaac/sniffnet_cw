@@ -1,10 +1,11 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, map, tap, throwError } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthResponse, CurrentUser } from './api.models';
 
-interface AuthSession {
+export interface AuthSession {
   token: string;
+  refreshToken: string;
   user: CurrentUser;
 }
 
@@ -17,6 +18,7 @@ export class AuthService {
 
   readonly session = computed(() => this.sessionState());
   readonly token = computed(() => this.sessionState()?.token ?? null);
+  readonly refreshToken = computed(() => this.sessionState()?.refreshToken ?? null);
   readonly currentUser = computed(() => this.sessionState()?.user ?? null);
   readonly isAuthenticated = computed(() => !!this.token());
   readonly isAdmin = computed(() => this.currentUser()?.role === 'ROLE_ADMIN');
@@ -46,6 +48,18 @@ export class AuthService {
     );
   }
 
+  refreshSession(): Observable<AuthSession> {
+    const refreshToken = this.refreshToken();
+    if (!refreshToken) {
+      return throwError(() => new Error('Refresh token is missing'));
+    }
+
+    return this.api.post<AuthResponse>('/auth/refresh', { refreshToken }).pipe(
+      map((response) => this.toSession(response)),
+      tap((session) => this.saveSession(session))
+    );
+  }
+
   logout(): void {
     localStorage.removeItem(this.storageKey);
     this.sessionState.set(null);
@@ -54,6 +68,7 @@ export class AuthService {
   private toSession(response: AuthResponse): AuthSession {
     return {
       token: response.token,
+      refreshToken: response.refreshToken,
       user: {
         id: response.userId,
         username: response.username,

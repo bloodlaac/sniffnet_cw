@@ -9,6 +9,7 @@ export interface ApiErrorResponse {
 
 export interface AuthResponse {
   token: string;
+  refreshToken: string;
   userId: number;
   username: string;
   email: string;

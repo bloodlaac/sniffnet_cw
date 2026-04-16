@@ -31,6 +31,7 @@ public class AppProperties {
         private String secret;
 
         private Duration expiration = Duration.ofHours(12);
+        private Duration refreshExpiration = Duration.ofDays(7);
 
         public String getSecret() {
             return secret;
@@ -46,6 +47,14 @@ public class AppProperties {
 
         public void setExpiration(Duration expiration) {
             this.expiration = expiration;
+        }
+
+        public Duration getRefreshExpiration() {
+            return refreshExpiration;
+        }
+
+        public void setRefreshExpiration(Duration refreshExpiration) {
+            this.refreshExpiration = refreshExpiration;
         }
     }
 

@@ -13,6 +13,10 @@ import ru.yanaeva.sniffnet_cw.config.AppProperties;
 @Service
 public class JwtService {
 
+    private static final String TOKEN_TYPE_CLAIM = "tokenType";
+    private static final String ACCESS_TOKEN_TYPE = "access";
+    private static final String REFRESH_TOKEN_TYPE = "refresh";
+
     private final AppProperties appProperties;
 
     public JwtService(AppProperties appProperties) {
@@ -20,12 +24,25 @@ public class JwtService {
     }
 
     public String generateToken(AppUserPrincipal principal) {
+        return generateAccessToken(principal);
+    }
+
+    public String generateAccessToken(AppUserPrincipal principal) {
+        return generateToken(principal, ACCESS_TOKEN_TYPE, appProperties.getJwt().getExpiration());
+    }
+
+    public String generateRefreshToken(AppUserPrincipal principal) {
+        return generateToken(principal, REFRESH_TOKEN_TYPE, appProperties.getJwt().getRefreshExpiration());
+    }
+
+    private String generateToken(AppUserPrincipal principal, String tokenType, java.time.Duration expirationDuration) {
         Instant now = Instant.now();
-        Instant expiration = now.plus(appProperties.getJwt().getExpiration());
+        Instant expiration = now.plus(expirationDuration);
         return Jwts.builder()
             .subject(principal.getUsername())
             .claim("userId", principal.getId())
             .claim("role", principal.getRoleCode())
+            .claim(TOKEN_TYPE_CLAIM, tokenType)
             .issuedAt(Date.from(now))
             .expiration(Date.from(expiration))
             .signWith(getSigningKey())
@@ -37,8 +54,23 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, AppUserPrincipal principal) {
+        return isAccessTokenValid(token, principal);
+    }
+
+    public boolean isAccessTokenValid(String token, AppUserPrincipal principal) {
+        return isTokenValid(token, principal, ACCESS_TOKEN_TYPE);
+    }
+
+    public boolean isRefreshTokenValid(String token, AppUserPrincipal principal) {
+        return isTokenValid(token, principal, REFRESH_TOKEN_TYPE);
+    }
+
+    private boolean isTokenValid(String token, AppUserPrincipal principal, String expectedTokenType) {
         String username = extractUsername(token);
-        return username.equals(principal.getUsername()) && parseClaims(token).getExpiration().after(new Date());
+        Claims claims = parseClaims(token);
+        return username.equals(principal.getUsername())
+            && expectedTokenType.equals(claims.get(TOKEN_TYPE_CLAIM, String.class))
+            && claims.getExpiration().after(new Date());
     }
 
     private Claims parseClaims(String token) {

@@ -100,6 +100,7 @@ class SniffnetApplicationTests {
                         .content(payload))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token", notNullValue()))
+                .andExpect(jsonPath("$.refreshToken", notNullValue()))
                 .andReturn()
                 .getResponse()
                 .getContentAsString()
