@@ -39,7 +39,7 @@ public class Metric {
     @Column(precision = 5, scale = 4)
     private BigDecimal validationLoss;
 
-    @Column(columnDefinition = "text")
+    @Column(length = 10000)
     private String detailsJson;
 
     public Long getId() {

@@ -50,7 +50,7 @@ public class ClassificationRequest {
     @Column(precision = 5, scale = 4)
     private BigDecimal confidence;
 
-    @Column(columnDefinition = "text")
+    @Column(length = 10000)
     private String probabilitiesJson;
 
     @PrePersist

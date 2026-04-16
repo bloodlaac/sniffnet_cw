@@ -73,7 +73,7 @@ public class PythonTrainingAdapter implements TrainingAdapter, ClassificationAda
     public TrainingResult fetchExperiment(Long externalExperimentId) {
         try {
             PythonExperimentResponse response = trainingClient.get()
-                .uri("/api/experiments/{id}", externalExperimentId)
+                .uri("/api/experiments/{id}/state", externalExperimentId)
                 .retrieve()
                 .body(PythonExperimentResponse.class);
 
