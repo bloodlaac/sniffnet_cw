@@ -10,7 +10,19 @@
 Локальный запуск:
 
 ```bash
-./mvnw spring-boot:run
+./mvnw -pl backend spring-boot:run
+```
+
+Сборка всего проекта из корня:
+
+```bash
+./mvnw package
+```
+
+Запуск backend-тестов:
+
+```bash
+./mvnw -pl backend test
 ```
 
 Docker PostgreSQL:
