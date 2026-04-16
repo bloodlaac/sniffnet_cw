@@ -15,29 +15,22 @@ import { formatApiError } from '../core/api.utils';
         <div class="auth-copy-inner">
           <div>
             <p class="eyebrow">SniffNet</p>
-            <h1>Оценка свежести продуктов по фотографии</h1>
-            <p class="lead">
-              Учебное веб-приложение для курсовой работы по Java Spring и Angular.
-            </p>
+            <h1>Оценка свежести продуктов</h1>
           </div>
 
           <div class="auth-points">
             <div class="auth-point">
-              <strong>Работа с моделями</strong>
-              <p>Просмотр доступных моделей и их метрик.</p>
+              <strong>Модели</strong>
+              <p>Сравнение моделей и выбор под задачу.</p>
             </div>
             <div class="auth-point">
-              <strong>Эксперименты обучения</strong>
-              <p>Создание и просмотр запусков обучения.</p>
+              <strong>Эксперименты</strong>
+              <p>Создание экспериментов по обучению моделей.</p>
             </div>
             <div class="auth-point">
-              <strong>Инференс по фото</strong>
-              <p>Загрузка изображения и получение результата классификации.</p>
+              <strong>Классификация</strong>
+              <p>Классификация продуктов на основе загруженных изображений.</p>
             </div>
-          </div>
-
-          <div class="auth-note">
-            Доступ к системе выполняется после регистрации или входа в учетную запись.
           </div>
         </div>
       </div>
@@ -122,10 +115,6 @@ import { formatApiError } from '../core/api.utils';
             </button>
           </form>
         }
-
-        <div class="hint">
-          <strong>Тестовые аккаунты:</strong> admin / admin123, demo / demo123
-        </div>
       </div>
     </section>
   `,

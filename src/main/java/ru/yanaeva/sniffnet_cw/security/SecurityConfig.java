@@ -54,8 +54,31 @@ public class SecurityConfig {
                     "/swagger-ui.html"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET, "/error").permitAll()
+                .requestMatchers(
+                    "/",
+                    "/index.html",
+                    "/auth",
+                    "/dashboard",
+                    "/experiments",
+                    "/experiments/*",
+                    "/classification",
+                    "/history",
+                    "/profile",
+                    "/admin/users",
+                    "/*.css",
+                    "/*.ico",
+                    "/*.js",
+                    "/*.json",
+                    "/*.map",
+                    "/*.png",
+                    "/*.svg",
+                    "/*.txt",
+                    "/*.woff",
+                    "/*.woff2"
+                ).permitAll()
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
-                .anyRequest().authenticated())
+                .requestMatchers("/api/**").authenticated()
+                .anyRequest().denyAll())
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
